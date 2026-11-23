@@ -82,10 +82,41 @@ export function validateProductionApiBase(
   return url.toString().replace(/\/$/, '')
 }
 
+export function validateProductionBuildConfig({
+  dataMode = process.env.VITE_DATA_MODE || 'api',
+  apiBaseUrl = process.env.VITE_API_BASE_URL,
+  allowCiPlaceholder = process.env.CI === 'true' && process.env.INCIDENT_ATLAS_CI === 'true',
+} = {}) {
+  const selectedMode = dataMode || 'api'
+
+  if (selectedMode === 'static-demo') {
+    if (apiBaseUrl?.trim()) {
+      throw new Error('Remove VITE_API_BASE_URL when VITE_DATA_MODE=static-demo; this build uses bundled fixtures and makes no API requests.')
+    }
+    return { mode: 'static-demo', apiBaseUrl: null }
+  }
+
+  if (selectedMode === 'fixtures') {
+    throw new Error('VITE_DATA_MODE=fixtures is development-only. Use static-demo for a public frontend-only build.')
+  }
+  if (selectedMode !== 'api') {
+    throw new Error('VITE_DATA_MODE must be either api or static-demo for a production build.')
+  }
+
+  return {
+    mode: 'api',
+    apiBaseUrl: validateProductionApiBase(apiBaseUrl, { allowCiPlaceholder }),
+  }
+}
+
 if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
   try {
-    validateProductionApiBase(process.env.VITE_API_BASE_URL)
-    console.log('Production API URL is an absolute HTTPS /api/v1 endpoint.')
+    const config = validateProductionBuildConfig()
+    if (config.mode === 'static-demo') {
+      console.log('Static demo build uses bundled synthetic fixtures; no backend API URL is configured.')
+    } else {
+      console.log('Production API URL is an absolute HTTPS /api/v1 endpoint.')
+    }
   } catch (error) {
     console.error(error instanceof Error ? error.message : 'Invalid production API URL.')
     process.exitCode = 1
