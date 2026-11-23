@@ -45,7 +45,7 @@ test('production API URL rejects reserved hosts outside the explicit CI build pa
 
 test('static demo production builds use bundled fixtures without an API URL', () => {
   assert.deepEqual(
-    validateProductionBuildConfig({ dataMode: 'static-demo' }),
+    validateProductionBuildConfig({ dataMode: 'static-demo', apiBaseUrl: '' }),
     { mode: 'static-demo', apiBaseUrl: null },
   )
 })
