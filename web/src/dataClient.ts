@@ -1,8 +1,11 @@
 import { ApiClient } from './apiClient'
 import type { ApprovalCreate, ApprovalResponse, DemoCapabilities, IncidentAtlasClient, InvestigationCreate, InvestigationReport, Source, TelemetryKind } from './contracts'
 
-const fixturePreviewEnabled = import.meta.env.DEV && import.meta.env.VITE_DATA_MODE === 'fixtures'
+const staticDemoEnabled = import.meta.env.VITE_DATA_MODE === 'static-demo'
+const developmentFixtureEnabled = import.meta.env.DEV && import.meta.env.VITE_DATA_MODE === 'fixtures'
+const fixturePreviewEnabled = staticDemoEnabled || developmentFixtureEnabled
 export const dataMode: IncidentAtlasClient['mode'] = fixturePreviewEnabled ? 'fixtures' : 'api'
+export const isStaticDemo = staticDemoEnabled
 const apiClient = new ApiClient()
 let fixtureClientPromise: Promise<IncidentAtlasClient> | undefined
 
@@ -29,6 +32,7 @@ export const dataClient: IncidentAtlasClient = {
 }
 
 export function modeDescription() {
+  if (isStaticDemo) return 'Public static demo using bundled synthetic fixtures'
   return dataMode === 'fixtures' ? 'Explicit development fixture preview' : 'Backend API data'
 }
 
