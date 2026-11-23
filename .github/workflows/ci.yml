@@ -202,6 +202,8 @@ jobs:
             exit 1
           fi
       - run: npm run build
+      - name: Build the frontend-only Vercel demo
+        run: env -u VITE_API_BASE_URL VITE_DATA_MODE=static-demo npm run build
       - run: npm audit --audit-level=moderate
       - name: Check browser bundle for server-only credential markers
         run: |
