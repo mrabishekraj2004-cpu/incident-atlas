@@ -4,12 +4,12 @@ Incident Atlas is a no-sign-in incident investigation demo. Visitors can inspect
 
 **Release status:** The source repository and CI are public. The website, API, and PostgreSQL database have not been deployed. There is no live public demo URL. Hosting remains gated on an approved spending cap and account access. Live AI remains disabled until proxy trust, global request limits, and a genuine provider request are verified.
 
-**Release-candidate source revision:** [`33b3356f42a9543ef70823acac1b387884e9f2c8`](https://github.com/shaviJayasingha/incident-atlas/commit/33b3356f42a9543ef70823acac1b387884e9f2c8), in [PR #5](https://github.com/shaviJayasingha/incident-atlas/pull/5). [GitHub Actions run #30 passed](https://github.com/shaviJayasingha/incident-atlas/actions/runs/45149721338): PostgreSQL-backed backend checks, frontend tests/typecheck/build, dependency audits, API container runtime, desktop/mobile browser journey, and release ZIP validation. This is CI evidence for the local application, not a public deployment. The release report records exact results and remaining gates.
+**GitHub source:** [`mrabishekraj2004-cpu/incident-atlas`](https://github.com/mrabishekraj2004-cpu/incident-atlas). The uploaded source snapshot at [`fbaed5909734214f3b237b539eb8d90e571431a6`](https://github.com/mrabishekraj2004-cpu/incident-atlas/commit/fbaed5909734214f3b237b539eb8d90e571431a6) passed [GitHub Actions run #1](https://github.com/mrabishekraj2004-cpu/incident-atlas/actions/runs/45255155052). That run checks the uploaded source snapshot; the Vercel frontend-only preparation described below is local and has not been pushed or deployed.
 
 ## Case study and source
 
 - [Portfolio case study and application screenshots](docs/portfolio-case-study.md)
-- [GitHub source repository](https://github.com/shaviJayasingha/incident-atlas)
+- [GitHub source repository](https://github.com/mrabishekraj2004-cpu/incident-atlas)
 - [Pre-deployment release report](docs/predeployment-release-report.md)
 - [Step 6 security and evaluation report](docs/step6-report.md)
 - [License decision](docs/licensing-decision.md) — no license has been selected or added.
@@ -30,7 +30,7 @@ docker compose up --build
 
 Open `http://localhost:5173`. Compose starts PostgreSQL, applies migrations and seeds runtime fixtures in a one-shot bootstrap service, then starts the API and web app. The no-key replay journey works with live AI disabled.
 
-To opt into the separate development fixture preview, copy `web/.env.development.fixture.example` to `web/.env.development.local`. The UI labels this mode **DEV FIXTURE PREVIEW**; it is never selected after an API failure and cannot appear in a production build.
+To opt into the development fixture preview, copy `web/.env.development.fixture.example` to `web/.env.development.local`. The UI labels this mode **DEV FIXTURE PREVIEW**; it is never selected after an API failure. For a deliberate public frontend-only showcase, use the separate `VITE_DATA_MODE=static-demo` build mode described below.
 
 For manual setup, see [API setup](api/README.md) and [web setup](web/README.md). Local checks:
 
@@ -45,16 +45,26 @@ cd ../web
 npm ci
 npm test
 npm run typecheck
+# Frontend-only portfolio build; bundled synthetic fixtures, no API URL.
+VITE_DATA_MODE=static-demo npm run build
 # Set INCIDENT_ATLAS_API_ORIGIN to a real public HTTPS API origin first.
 VITE_API_BASE_URL="${INCIDENT_ATLAS_API_ORIGIN%/}/api/v1" npm run build
 npm audit --audit-level=moderate
 ```
 
-The production build requires an absolute HTTPS API URL ending in `/api/v1`. It rejects reserved example, test, loopback, private, and documentation-only hosts outside the explicit CI placeholder path. For Netlify, set `VITE_API_BASE_URL` to the actual Render API origin at build time. If unset or relative, the build fails instead of silently calling the static site itself. In a Git checkout, `python scripts/build_release_zip.py --output /tmp/incident-atlas-release.zip` creates and inspects a ZIP from tracked project files while excluding generated output, environments, secrets, caches, and Git metadata.
+API mode requires an absolute HTTPS API URL ending in `/api/v1`. It rejects reserved example, test, loopback, private, and documentation-only hosts outside the explicit CI placeholder path. The static portfolio mode instead uses the bundled synthetic fixture data and requires `VITE_API_BASE_URL` to be unset. Its stored reports never call a model, its simulated approvals stay in the current browser, and live AI and backend persistence are unavailable. In a Git checkout, `python scripts/build_release_zip.py --output /tmp/incident-atlas-release.zip` creates and inspects a ZIP from tracked project files while excluding generated output, environments, secrets, caches, and Git metadata.
 
 ## Deployment configuration
 
-The planned architecture is Netlify for the static React/Vite site and Render for FastAPI plus PostgreSQL. The Render pre-deploy command migrates and seeds with a pinned `MIGRATION_DATABASE_URL`; the API runs with the separate `incident_atlas_runtime` role. Production requires `PUBLIC_SITE_ORIGIN` and `CORS_ALLOWED_ORIGINS` to be the same exact Netlify HTTPS origin. The runtime role receives table-specific grants and cannot mutate seeded reference data, stored replays, or immutable evidence. It cannot access evaluation data or run migrations. Public model calls have a PostgreSQL-backed global cap; `LIVE_ANALYSIS_ENABLED` remains false in the checked-in deployment template.
+### Frontend-only Vercel preview
+
+The React frontend can be deployed by itself from the `web/` directory. Select `web` as Vercel's Root Directory, use the Vite preset, `npm ci`, `npm run build`, and `dist`, then set `VITE_DATA_MODE=static-demo` for Production and Preview. Leave `VITE_API_BASE_URL` unset. Enable **Include source files outside of the Root Directory in the Build Step**, because the frontend imports the shared synthetic incident JSON from `data/incidents/`. The checked-in Vercel rewrite supports direct refreshes on React Router paths. The exact steps are in [`web/README.md`](web/README.md).
+
+This static build serves bundled synthetic scenarios and stored replay reports. It does not deploy or call FastAPI or PostgreSQL. Approvals are browser-local; live AI and backend persistence are unavailable. No Vercel project has been connected and no site has been deployed.
+
+### Optional backend integration
+
+The older API deployment plan uses Render for FastAPI plus PostgreSQL. Its pre-deploy command migrates and seeds with a pinned `MIGRATION_DATABASE_URL`; the API runs with the separate `incident_atlas_runtime` role. Production requires `PUBLIC_SITE_ORIGIN` and `CORS_ALLOWED_ORIGINS` to match the exact frontend HTTPS origin. The runtime role cannot mutate seeded reference data, stored replays, or immutable evidence, and cannot access evaluation data or run migrations. Public model calls have a PostgreSQL-backed global cap; `LIVE_ANALYSIS_ENABLED` remains false in the checked-in deployment template.
 
 No paid resources were created. Before provisioning, approve a spending cap and connect the intended hosting account. The [staged deployment runbook](docs/deployment.md) records how to reserve the Netlify origin first, pin the migration credential before adding the runtime credential, start the API, then build the site with the actual API origin. After deployment, run `python scripts/deployment_smoke.py --api-origin <actual-api-origin> --site-origin <actual-site-origin>` and complete desktop/mobile walkthroughs. See the current [release report](docs/predeployment-release-report.md) for verified outcomes.
 
