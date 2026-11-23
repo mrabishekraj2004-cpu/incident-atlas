@@ -3,7 +3,7 @@
 **Reviewed:** 2026-11-23  
 **Application code commit:** [76392ba2539781f3b49babb84b80aee94cec5043](https://github.com/mrabishekraj2004-cpu/incident-atlas/commit/76392ba2539781f3b49babb84b80aee94cec5043)  
 **Production frontend:** [https://incident-atlas-demo.vercel.app/](https://incident-atlas-demo.vercel.app/)  
-**Hosting:** Vercel Hobby project `incident-atlas-demo`; production deployment is Ready and tracks `main`. The Vercel project dashboard showed the latest deployment serving the README follow-up commit; application code remains the tested static-demo code above.  
+**Hosting:** Vercel Hobby project `incident-atlas-demo`; the production domain is Ready and tracks `main`. The tested app code is the commit above. Documentation-only main commits after it also produced Ready Vercel deployments and did not change the frontend bundle.  
 **CI evidence:** [GitHub Actions PR #1 run #3](https://github.com/mrabishekraj2004-cpu/incident-atlas/actions/runs/45265136934), all five jobs succeeded.
 
 ## Deployment scope
@@ -39,7 +39,7 @@ Run #3 passed these jobs:
 | `browser-e2e` | Passed the local CI browser journey using Vite, FastAPI, and PostgreSQL services. It uploaded local CI screenshots. |
 | `release-archive` | Passed tracked-file archive inspection and uploaded the ZIP and checksum artifact for that CI run. |
 
-The tested CI merge commit was `9f8f2e6ea6083756861901d98d78c6d434de02fb`; the corresponding application changes are on main at `76392ba2539781f3b49babb84b80aee94cec5043`. The run predates the later README and report-only edits. No new CI run is claimed for those documentation changes.
+The tested CI merge commit was `9f8f2e6ea6083756861901d98d78c6d434de02fb`; the corresponding application changes are on main at `76392ba2539781f3b49babb84b80aee94cec5043`. The run predates later README, report and case-study edits. No new CI run is claimed for those documentation changes.
 
 ## Evaluation and security limits
 
