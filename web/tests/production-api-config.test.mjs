@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { validateProductionApiBase } from '../scripts/production-api-config.mjs'
+import { validateProductionApiBase, validateProductionBuildConfig } from '../scripts/production-api-config.mjs'
 
 test('production API URL requires an absolute HTTPS /api/v1 endpoint', () => {
   assert.equal(
@@ -40,5 +40,26 @@ test('production API URL rejects reserved hosts outside the explicit CI build pa
       allowCiPlaceholder: true,
     }),
     'https://incident-api.example.invalid/api/v1',
+  )
+})
+
+test('static demo production builds use bundled fixtures without an API URL', () => {
+  assert.deepEqual(
+    validateProductionBuildConfig({ dataMode: 'static-demo', apiBaseUrl: '' }),
+    { mode: 'static-demo', apiBaseUrl: null },
+  )
+})
+
+test('static demo rejects an API URL so the frontend-only mode stays unambiguous', () => {
+  assert.throws(
+    () => validateProductionBuildConfig({ dataMode: 'static-demo', apiBaseUrl: 'https://api.example.com/api/v1' }),
+    /Remove VITE_API_BASE_URL/,
+  )
+})
+
+test('development fixture mode cannot be used as a production build mode', () => {
+  assert.throws(
+    () => validateProductionBuildConfig({ dataMode: 'fixtures' }),
+    /development-only/,
   )
 })

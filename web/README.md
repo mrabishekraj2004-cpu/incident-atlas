@@ -1,6 +1,6 @@
 # Incident Atlas web
 
-React 19, Vite 8, TypeScript 7, and React Router power the public incident UI. The standard mode reads FastAPI from `/api/v1`; it does not load scenario JSON as a fallback.
+React 19, Vite 8, TypeScript 7, and React Router power the incident investigation UI. The default mode reads FastAPI from `/api/v1`; it does not silently load fixture data after an API failure. A separate, explicit `static-demo` mode is available for a frontend-only portfolio deployment.
 
 ## Local API-backed run
 
@@ -12,7 +12,7 @@ npm ci
 npm run dev
 ```
 
-Vite proxies `/api/*` to `http://127.0.0.1:8000`, so local browser requests use the same origin. A production build requires `VITE_API_BASE_URL` to be an absolute HTTPS API base URL ending in exactly `/api/v1`; the build exits before Vite runs if it is unset, relative, HTTP, or malformed. Netlify must receive the real API URL as a build-time variable. In Render, set `PUBLIC_SITE_ORIGIN` to the exact Netlify HTTPS origin and `CORS_ALLOWED_ORIGINS` to that same single origin; production API startup rejects a mismatch. The visitor never supplies a model key; `OPENAI_API_KEY` belongs only in the API host's environment and must never use a `VITE_` variable.
+Vite proxies `/api/*` to `http://127.0.0.1:8000`, so local browser requests use the same origin. In API mode, a production build requires `VITE_API_BASE_URL` to be an absolute HTTPS API base URL ending in exactly `/api/v1`; the build exits before Vite runs if it is unset, relative, HTTP, or malformed. The visitor never supplies a model key; `OPENAI_API_KEY` belongs only in an API host's environment and must never use a `VITE_` variable.
 
 ## Development fixture preview
 
@@ -23,18 +23,37 @@ cp .env.development.fixture.example .env.development.local
 npm run dev
 ```
 
-The app labels it **DEV FIXTURE PREVIEW** and keeps its approval record local to the browser. Vite's production build ignores this setting and always uses the API client.
+The app labels it **DEV FIXTURE PREVIEW** and keeps its approval record local to the browser. `fixtures` is accepted only for development and is rejected by the production build check.
+
+## Vercel frontend-only demo
+
+The Vercel configuration deploys only this React/Vite frontend. It uses bundled, project-authored synthetic incident and replay JSON; it does not connect to FastAPI or PostgreSQL. Simulated approvals are saved in the current browser's local storage, not in a backend. Live AI, server persistence, and external actions are unavailable in this mode.
+
+In the Vercel project settings use:
+
+- Root Directory: `web`
+- Framework Preset: `Vite`
+- Install Command: `npm ci`
+- Build Command: `npm run build`
+- Output Directory: `dist`
+- Environment Variable: `VITE_DATA_MODE=static-demo` for Production and Preview
+- Leave `VITE_API_BASE_URL` unset
+
+Because the fixture adapters import the shared JSON under the repository's `data/incidents/` directory, enable **Include source files outside of the Root Directory in the Build Step** in Vercel's Root Directory settings. Confirm that this setting is on before deploying. The checked-in `vercel.json` rewrites client-side React Router paths to `index.html` so refreshing an incident or replay URL works.
+
+The `static-demo` production build check fails if `VITE_API_BASE_URL` is also set or if the mode is omitted. See [`.env.vercel.example`](.env.vercel.example) for the non-secret build variable.
 
 ## Checks
 
 ```bash
 npm test
 npm run typecheck
+VITE_DATA_MODE=static-demo npm run build
 VITE_API_BASE_URL=https://api.example.invalid/api/v1 npm run build
 npm audit --audit-level=moderate
 ```
 
-The `.invalid` URL is a safe build-check value only. Do not publish a site built with it.
+The `.invalid` URL is a safe API-mode build-check value only. Do not publish a site built with it. For the Vercel static demo, use `VITE_DATA_MODE=static-demo` and leave `VITE_API_BASE_URL` unset.
 
 The Node test runner exercises the API client against mocked contract responses, including pagination, replay provenance, citation resolution, the live capability gate, API problem responses, cancellation, safe read retries, idempotency headers, and acknowledged simulation approvals.
 
