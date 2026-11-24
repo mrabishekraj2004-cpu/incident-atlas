@@ -109,6 +109,12 @@ body,
   background: var(--atlas-canvas);
 }
 
+.main-column,
+main,
+.page-wrap {
+  min-width: 0;
+}
+
 html { scroll-behavior: smooth; }
 body { font-size: 14px; line-height: 1.55; transition: color 180ms ease, background-color 180ms ease; }
 :focus-visible { outline: 3px solid var(--atlas-focus) !important; outline-offset: 3px; }
