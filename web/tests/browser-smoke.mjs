@@ -71,6 +71,24 @@ const assertMobileFits = async () => {
           element: `${element.tagName.toLowerCase()}${element.id ? `#${element.id}` : ''}${typeof element.className === 'string' && element.className ? `.${element.className.trim().replace(/\s+/g, '.')}` : ''}`,
           right: Math.round(rect.right),
           width: Math.round(rect.width),
+          ancestors: (() => {
+            const result = []
+            let parent = element.parentElement
+            while (parent && result.length < 5) {
+              const parentRect = parent.getBoundingClientRect()
+              result.push({
+                element: `${parent.tagName.toLowerCase()}${parent.id ? `#${parent.id}` : ''}${typeof parent.className === 'string' && parent.className ? `.${parent.className.trim().replace(/\s+/g, '.')}` : ''}`,
+                left: Math.round(parentRect.left),
+                right: Math.round(parentRect.right),
+                width: Math.round(parentRect.width),
+                scrollWidth: parent.scrollWidth,
+                clientWidth: parent.clientWidth,
+                display: getComputedStyle(parent).display,
+              })
+              parent = parent.parentElement
+            }
+            return result
+          })(),
         }
       })
       .filter(element => element.right > viewport + 1)
