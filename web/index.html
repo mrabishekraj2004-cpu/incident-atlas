@@ -3,12 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f5f7f9" />
-    <meta name="description" content="Explore Incident Atlas, a public synthetic-data demo of evidence-linked incident investigation and human-reviewed simulated mitigations." />
-    <meta property="og:title" content="Incident Atlas — Evidence-led incident review" />
+    <meta name="theme-color" content="#f3f6f3" />
+    <meta name="description" content="Incident Atlas is an evidence-led incident response demo. Explore synthetic telemetry, trace hypotheses to sources, and review simulated actions." />
+    <meta property="og:title" content="Incident Atlas — Evidence-led incident response" />
     <meta property="og:description" content="Explore synthetic incident scenarios, stored investigation replays, and evidence-linked hypotheses. No sign-in or API key required." />
     <meta property="og:type" content="website" />
-    <title>Incident Atlas — Evidence-led incident review</title>
+    <title>Incident Atlas — Evidence-led incident response</title>
+    <script>
+      try {
+        const storedTheme = localStorage.getItem('incident-atlas.theme');
+        const theme = storedTheme === 'dark' || storedTheme === 'light' ? storedTheme : 'light';
+        document.documentElement.dataset.theme = theme;
+        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#111a1b' : '#f3f6f3');
+      } catch {
+        document.documentElement.dataset.theme = 'light';
+        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#f3f6f3');
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
