@@ -21,7 +21,7 @@ try {
   page.on('pageerror', error => pageErrors.push(error.message))
 
   await page.goto(baseUrl)
-  await page.getByRole('heading', { name: /Follow the evidence/ }).waitFor()
+  await page.getByRole('heading', { name: /Follow the incident/ }).waitFor()
   await capture(page, '01-dashboard-desktop.png')
   await page.getByRole('link', { name: /Explore incidents/ }).click()
   await page.getByRole('heading', { name: 'Choose an incident' }).waitFor()
@@ -66,7 +66,7 @@ const assertMobileFits = async () => {
   assert.equal(overflow, 0, 'mobile page should not overflow horizontally')
 }
   await mobilePage.goto(baseUrl)
-  await mobilePage.getByRole('heading', { name: /Follow the evidence/ }).waitFor()
+  await mobilePage.getByRole('heading', { name: /Follow the incident/ }).waitFor()
   await capture(mobilePage, '05-dashboard-mobile.png')
 await assertMobileFits()
   await mobilePage.getByRole('link', { name: /Explore incidents/ }).focus()
