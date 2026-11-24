@@ -62,8 +62,22 @@ const mobilePage = await mobileContext.newPage()
 const mobilePageErrors = []
 mobilePage.on('pageerror', error => mobilePageErrors.push(error.message))
 const assertMobileFits = async () => {
-  const overflow = await mobilePage.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
-  assert.equal(overflow, 0, 'mobile page should not overflow horizontally')
+  const diagnostics = await mobilePage.evaluate(() => {
+    const viewport = document.documentElement.clientWidth
+    const overflowing = [...document.querySelectorAll('body *')]
+      .map(element => {
+        const rect = element.getBoundingClientRect()
+        return {
+          element: `${element.tagName.toLowerCase()}${element.id ? `#${element.id}` : ''}${typeof element.className === 'string' && element.className ? `.${element.className.trim().replace(/\s+/g, '.')}` : ''}`,
+          right: Math.round(rect.right),
+          width: Math.round(rect.width),
+        }
+      })
+      .filter(element => element.right > viewport + 1)
+      .slice(0, 12)
+    return { overflow: document.documentElement.scrollWidth - viewport, viewport, overflowing }
+  })
+  assert.equal(diagnostics.overflow, 0, `mobile page should not overflow horizontally: ${JSON.stringify(diagnostics)}`)
 }
   await mobilePage.goto(baseUrl)
   await mobilePage.getByRole('heading', { name: /Follow the incident/ }).waitFor()
