@@ -269,6 +269,8 @@ h1 { color: var(--atlas-ink); font-size: clamp(30px, 2.7vw, 38px); line-height: 
 .panel-heading p, .muted-small, .metric-head > div > span, .chart-foot, .service-node small, .dependency-edge small, .timeline-meta, .trace-meta { color: var(--atlas-muted); }
 .metric-card, .service-node, .dependency-edge, .timeline-event, .log-row, .trace-row, .hypothesis-card { border-color: var(--atlas-border); background: var(--atlas-surface-soft); }
 .metric-value, .service-node-icon, .next-check-icon, .empty-icon, .evidence-id-row code, .snapshot-meta code, .detail-list code { color: var(--atlas-brand); }
+.metric-head > div { min-width: 0; flex: 1 1 0; }
+.metric-head h4 { min-width: 0; white-space: nowrap; }
 .metric-svg .chart-axis, .metric-svg .chart-gridline { stroke: var(--atlas-border-strong); }
 .evidence-link { border-color: var(--atlas-border); background: var(--atlas-surface-soft); }
 .evidence-link:hover { border-color: var(--atlas-brand-line); background: var(--atlas-brand-soft); }
