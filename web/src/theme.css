@@ -830,6 +830,7 @@ html[data-theme="dark"] .developer-credit strong { color: var(--atlas-ink-soft);
   .auth-page-footer { padding-inline: 20px; }
 }
 @media (max-width: 520px) {
+  .metric-grid { grid-template-columns: minmax(0, 1fr); }
   .brand { gap: 9px; }
   .brand-mark { width: 36px; height: 36px; }
   .brand-mark svg { width: 31px; height: 31px; }
