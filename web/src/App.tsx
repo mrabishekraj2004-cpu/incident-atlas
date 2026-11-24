@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, NavLink, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Link, NavLink, Outlet, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { dataClient, dataMode, isStaticDemo } from './dataClient'
+import { RegisterPage, SignInPage, useAccount, useTheme } from './account'
 import { ApiClientError } from './apiClient'
 import { canRunLiveInvestigation, evidenceLinkPath, reportPath as investigationPath } from './uiContracts'
 import type { ApprovalResponse, Confidence, DemoCapabilities, DependenciesResponse, EvidenceItemOut, IncidentCard, IncidentDetail as IncidentDetailType, InvestigationReport, LogEventOut, MetricPointOut, Source, SpanOut, TelemetryKind, TimelineEventOut } from './contracts'
@@ -8,7 +9,7 @@ import { useResource, type Resource } from './useResource'
 
 const CapabilitiesContext = createContext<Resource<DemoCapabilities> & { retry: () => void }>({ status: 'loading', retry: () => undefined })
 
-function Icon({ name, size = 18 }: { name: 'atlas' | 'grid' | 'book' | 'chevron' | 'arrow' | 'clock' | 'activity' | 'trace' | 'file' | 'server' | 'check' | 'external' | 'search' | 'alert' | 'arrowUp' | 'arrowDown'; size?: number }) {
+function Icon({ name, size = 18 }: { name: 'atlas' | 'grid' | 'book' | 'chevron' | 'arrow' | 'clock' | 'activity' | 'trace' | 'file' | 'server' | 'check' | 'external' | 'search' | 'alert' | 'arrowUp' | 'arrowDown' | 'settings'; size?: number }) {
   const common = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, 'aria-hidden': true as const }
   const paths: Record<typeof name, React.ReactNode> = {
     atlas: <><circle cx="12" cy="12" r="9"/><path d="M3.5 9h17M3.5 15h17M12 3c2.4 2.5 3.5 5.5 3.5 9s-1.1 6.5-3.5 9c-2.4-2.5-3.5-5.5-3.5-9S9.6 5.5 12 3Z"/></>,
@@ -18,33 +19,41 @@ function Icon({ name, size = 18 }: { name: 'atlas' | 'grid' | 'book' | 'chevron'
     activity: <><path d="M3 12h4l3-8 4 16 3-8h4"/></>, trace: <><path d="M6 4v5a3 3 0 0 0 3 3h6a3 3 0 0 1 3 3v5"/><circle cx="6" cy="4" r="2"/><circle cx="18" cy="20" r="2"/><circle cx="18" cy="4" r="2"/><path d="M18 6v3a3 3 0 0 1-3 3h-1"/></>,
     file: <><path d="M13 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10z"/><path d="M13 3v7h7M8 14h8M8 17h6"/></>, server: <><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01M11 7.5h6M11 16.5h6"/></>,
     check: <><path d="m5 12 4 4L19 6"/></>, external: <><path d="M14 4h6v6M20 4 11 13"/><path d="M18 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5"/></>,
-    search: <><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></>, alert: <><path d="M12 3 2.8 19h18.4L12 3Z"/><path d="M12 9v4M12 16h.01"/></>, arrowUp: <><path d="M12 19V5M6 11l6-6 6 6"/></>, arrowDown: <><path d="M12 5v14m6-6-6 6-6-6"/></>,
+    search: <><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></>, alert: <><path d="M12 3 2.8 19h18.4L12 3Z"/><path d="M12 9v4M12 16h.01"/></>, arrowUp: <><path d="M12 19V5M6 11l6-6 6 6"/></>, arrowDown: <><path d="M12 5v14m6-6-6 6-6-6"/></>, settings: <><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.2 2.1-2 2-2.2-1.1a7.8 7.8 0 0 1-1.6.7l-.7 2.2h-2.8l-.7-2.2a7.8 7.8 0 0 1-1.6-.7l-2.2 1.1-2-2 1.1-2.2a7.8 7.8 0 0 1-.7-1.6l-2.2-.7v-2.8l2.2-.7a7.8 7.8 0 0 1 .7-1.6L4.9 7.4l2-2 2.2 1.1a7.8 7.8 0 0 1 1.6-.7l.7-2.2h2.8l.7 2.2a7.8 7.8 0 0 1 1.6.7l2.2-1.1 2 2-1.1 2.2a7.8 7.8 0 0 1 .7 1.6l2.2.7v2.8l-2.2.7a7.8 7.8 0 0 1-.7 1.6Z"/></>,
   }
   return <svg {...common}>{paths[name]}</svg>
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell() {
   const capabilities = useContext(CapabilitiesContext)
+  const { profile, signOut } = useAccount()
+  const { theme, toggleTheme } = useTheme()
   const sourceLabel = dataMode === 'fixtures' ? isStaticDemo ? 'STATIC FIXTURE DEMO' : 'FIXTURE PREVIEW · DEV' : 'BACKEND API'
+  const initials = profile?.name.split(/\s+/).slice(0, 2).map(value => value[0]).join('').toUpperCase() || 'GU'
   return <div className="app-shell">
     <a className="skip-link" href="#main">Skip to content</a>
     <aside className="sidebar">
-      <Link to="/" className="brand"><span className="brand-mark"><Icon name="atlas" size={21} /></span><span>incident<span className="brand-light">atlas</span><small>INVESTIGATION CONSOLE</small></span></Link>
+      <Link to="/" className="brand"><span className="brand-wordmark"><strong>Incident Atlas</strong><small>INVESTIGATION WORKSPACE</small></span></Link>
       <div className="side-label">WORKSPACE</div>
       <nav className="primary-nav" aria-label="Primary navigation">
         <NavLink to="/" end className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}><Icon name="grid" /> Overview</NavLink>
         <NavLink to="/incidents" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}><Icon name="alert" /> Incident library <span className="nav-count">03</span></NavLink>
         <NavLink to="/methodology" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}><Icon name="book" /> Methodology</NavLink>
       </nav>
+      <div className="side-label account-nav-label">PREFERENCES</div>
+      <nav className="primary-nav" aria-label="Account navigation">
+        <NavLink to="/settings" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}><Icon name="settings" /> Settings</NavLink>
+      </nav>
       <div className="sidebar-spacer" />
       <div className="sandbox-card"><div className="sandbox-heading"><span className="status-dot"/> Demo environment</div><p>Synthetic telemetry only. No connected systems.</p><span className="version-chip">{dataMode === 'fixtures' ? isStaticDemo ? 'STATIC FIXTURE MODE' : 'DEV FIXTURE MODE' : 'API DATA MODE'}</span></div>
-      <div className="sidebar-foot">PUBLIC PREVIEW <span>•</span> NO SIGN-IN</div>
+      <div className="sidebar-account">{profile ? <><span className="avatar account-avatar">{initials}</span><span className="account-summary"><strong>{profile.name}</strong><small>Preview profile</small></span><button type="button" className="account-menu-button" onClick={signOut} title="End this local preview session" aria-label="Sign out of preview session">↗</button></> : <><span className="avatar account-avatar">GU</span><span className="account-summary"><strong>Guest workspace</strong><small>Local preview</small></span><Link to="/login" className="account-menu-button" aria-label="Sign in to preview">→</Link></>}</div>
+      <div className="sidebar-foot">SYNTHETIC DATA <span>•</span> NO LIVE SYSTEMS</div>
     </aside>
     <div className="main-column">
-      <header className="topbar"><div className="breadcrumb"><span className="breadcrumb-dot"/> Incident Atlas <Icon name="chevron" size={14} /> <span>Evidence-led review</span></div><div className="topbar-right"><span className="env-pill"><span/> {sourceLabel}</span><span className="avatar">IA</span></div></header>
+      <header className="topbar"><div className="breadcrumb"><span className="breadcrumb-dot"/> Incident Atlas <Icon name="chevron" size={14} /> <span>Evidence-led review</span></div><div className="topbar-right"><span className="env-pill"><span/> {sourceLabel}</span><button type="button" className="theme-toggle" onClick={toggleTheme} aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} appearance`}>{theme === 'light' ? '◐' : '◑'} <span>{theme === 'light' ? 'Dark' : 'Light'}</span></button>{profile ? <Link className="topbar-profile" to="/settings/profile"><span className="avatar">{initials}</span><span>{profile.name.split(' ')[0]}</span></Link> : <Link className="topbar-signin" to="/login">Sign in</Link>}</div></header>
       {dataMode === 'api' && <div className="mode-status" role="status">{capabilities.status === 'loading' ? 'Checking API capabilities…' : capabilities.status === 'error' ? 'API capability check failed · live investigation remains unavailable until checked' : capabilities.data.live_ai_enabled ? `Live AI enabled · ${capabilities.data.live_label}` : `Live AI disabled · ${capabilities.data.live_label}`}</div>}
       {isStaticDemo && <div className="mode-status" role="status">Static portfolio demo · bundled synthetic data · approvals are saved only in this browser · no API or live AI.</div>}
-      <main id="main" tabIndex={-1}>{children}</main>
+      <main id="main" tabIndex={-1}><Outlet/></main>
       <footer className="page-footer"><span>Incident Atlas <span className="footer-divider">/</span> Synthetic incident investigation</span><span>Evidence first. Hypotheses always.</span></footer>
     </div>
   </div>
@@ -94,25 +103,22 @@ function IncidentCardView({ incident }: { incident: IncidentCard }) {
 
 function Dashboard() {
   const incidentResource = useResource('incident-list', signal => dataClient.listIncidents(signal))
+  const capabilities = useContext(CapabilitiesContext)
   const incidents = incidentResource.status === 'ready' ? incidentResource.data : []
+  const replayCount = incidents.filter(incident => incident.replay_available).length
+  const liveStatus = dataMode === 'fixtures' ? 'Unavailable' : capabilities.status === 'loading' ? 'Checking' : capabilities.status === 'error' ? 'Unknown' : capabilities.data.live_ai_enabled ? 'Enabled' : 'Disabled'
+  const sourceSummary = dataMode === 'fixtures' ? isStaticDemo ? 'Bundled fixtures' : 'Development fixtures' : 'FastAPI service'
   return <div className="page-wrap dashboard-page">
-    <div className="hero-card">
-      <div className="hero-copy"><div className="eyebrow eyebrow-light"><span className="live-dot"/> OPERATIONS INTELLIGENCE · DEMO</div><h1>Follow the evidence.<br/><em>Challenge the cause.</em></h1><p>Explore how an investigation can connect service signals into ranked, uncertain hypotheses — with every claim linked back to its source.</p><div className="hero-actions"><Link to="/incidents" className="button button-primary">Explore incidents <Icon name="arrow" size={17}/></Link><Link to="/methodology" className="button button-hero-ghost">How this demo works <Icon name="chevron" size={15}/></Link></div><div className="hero-foot"><span><Icon name="check" size={15}/> No account or API key</span><span><Icon name="check" size={15}/> Synthetic data</span><span><Icon name="check" size={15}/> Human approval boundary</span></div></div>
-      <div className="hero-visual" aria-label="Illustration of evidence signals converging on a hypothesis">
-        <div className="signal-orbit orbit-one"/><div className="signal-orbit orbit-two"/><div className="signal-orbit orbit-three"/>
-        <div className="signal-node node-deploy"><Icon name="arrowUp" size={15}/><span>DEPLOY</span></div><div className="signal-node node-metric"><Icon name="activity" size={15}/><span>METRIC</span></div><div className="signal-node node-trace"><Icon name="trace" size={15}/><span>TRACE</span></div>
-        <div className="signal-center"><div className="center-mark"><Icon name="atlas" size={30}/></div><span>HYPOTHESIS</span><b>Ranked · uncertain</b></div>
-        <svg className="signal-lines" viewBox="0 0 420 350" aria-hidden="true"><path d="M88 83 C145 96 134 147 192 158"/><path d="M330 96 C271 102 284 146 225 160"/><path d="M92 256 C151 240 141 201 193 187"/></svg>
-        <span className="visual-caption">Signal correlation<br/><b>not proof of cause</b></span>
-      </div>
-    </div>
-    <div className="section-heading"><div><div className="eyebrow">START WITH A SCENARIO</div><h2>Choose an incident</h2><p>Each case is deterministic, synthetic, and ready for a stored replay.</p></div><Link to="/incidents" className="text-link">View all incidents <Icon name="arrow" size={15}/></Link></div>
-    {incidentResource.status === 'loading' ? <LoadingState label="Loading the incident catalogue"/> : incidentResource.status === 'error' ? <ResourceError title="Incident catalogue unavailable" error={incidentResource.error} retry={incidentResource.retry}/> : incidents.length ? <div className="incident-grid">{incidents.map(incident => <IncidentCardView key={incident.id} incident={incident}/>)}</div> : <EmptyState title="No incidents are available" body="The incident catalogue is currently empty." action={<Link to="/methodology" className="text-link">Read how fixtures work <Icon name="arrow" size={14}/></Link>}/>}
-    <div className="how-row"><div className="how-step"><span>01</span><div><b>Inspect the signals</b><p>Timeline, dependencies, metrics, logs and traces.</p></div></div><div className="how-arrow"><Icon name="arrow" size={18}/></div><div className="how-step"><span>02</span><div><b>Review the replay</b><p>See ranked hypotheses and linked evidence.</p></div></div><div className="how-arrow"><Icon name="arrow" size={18}/></div><div className="how-step"><span>03</span><div><b>Approve a simulation</b><p>Practice the boundary. Change no system.</p></div></div></div>
-    {dataMode === 'fixtures' ? isStaticDemo ? <div className="notice notice-info fixture-note"><span className="notice-symbol">i</span><div><strong>Static portfolio demo · synthetic data</strong><div>Scenarios and stored replays are bundled with this site. Live AI is unavailable; simulated approvals are saved only in this browser and do not reach a backend.</div></div><SourceTag tone="blue">STATIC FIXTURES</SourceTag></div> : <div className="notice notice-info fixture-note"><span className="notice-symbol">i</span><div><strong>Development fixture preview</strong><div>Explicit fixture mode is active. Opening a report shows a local stored replay; no API or AI model is called.</div></div><SourceTag tone="blue">FIXTURES · DEV ONLY</SourceTag></div> : <div className="notice notice-info fixture-note"><span className="notice-symbol">i</span><div><strong>Public demo · no visitor key</strong><div>Incident data and approvals are served by the backend. Stored replay reads never call a model.</div></div><SourceTag tone="blue">BACKEND DATA</SourceTag></div>}
+    <PageTitle eyebrow="WORKSPACE / OVERVIEW" title="Incident review" description="A focused workspace for exploring synthetic incidents, evidence, and saved investigation results." actions={<Link to="/incidents" className="button button-primary">Browse incident library <Icon name="arrow" size={15}/></Link>} />
+    <section className="overview-welcome" aria-labelledby="overview-welcome-title"><div className="overview-welcome-copy"><div className="eyebrow"><span className="status-dot"/> DEMO WORKSPACE</div><h2 id="overview-welcome-title">Every hypothesis starts with a source.</h2><p>Inspect service signals, open the stored replay, and trace each claim to its evidence. Approval records a simulation only.</p><Link to="/incidents" className="text-link">Choose a scenario <Icon name="arrow" size={15}/></Link></div><div className="overview-welcome-meta"><SourceTag tone="blue">{dataMode === 'fixtures' ? isStaticDemo ? 'STATIC PORTFOLIO DATA' : 'DEVELOPMENT FIXTURES' : 'BACKEND API DATA'}</SourceTag><span>Synthetic scenarios · no connected systems</span></div></section>
+    <div className="overview-stat-grid" aria-label="Workspace summary"><article className="overview-stat"><span>SCENARIOS</span><strong>{incidentResource.status === 'ready' ? String(incidents.length).padStart(2, '0') : '—'}</strong><small>Reproducible synthetic cases</small></article><article className="overview-stat"><span>STORED REPLAYS</span><strong>{incidentResource.status === 'ready' ? String(replayCount).padStart(2, '0') : '—'}</strong><small>Saved result · zero model calls</small></article><article className="overview-stat"><span>DATA SOURCE</span><strong className="overview-stat-text">{sourceSummary}</strong><small>{dataMode === 'fixtures' ? 'Local demo content' : 'API-backed reads'}</small></article><article className="overview-stat"><span>LIVE INVESTIGATION</span><strong className={`overview-stat-text ${liveStatus === 'Enabled' ? 'status-enabled' : ''}`}>{liveStatus}</strong><small>{liveStatus === 'Enabled' ? 'Optional server capability' : 'Replay path remains available'}</small></article></div>
+    <section className="overview-catalogue" aria-labelledby="overview-catalogue-title"><div className="overview-section-heading"><div><div className="eyebrow">INCIDENT CATALOGUE</div><h2 id="overview-catalogue-title">Scenarios to explore</h2><p>Choose a case to review its timeline, services, and telemetry.</p></div><Link to="/incidents" className="text-link">View library <Icon name="arrow" size={15}/></Link></div>
+      {incidentResource.status === 'loading' ? <LoadingState label="Loading the incident catalogue"/> : incidentResource.status === 'error' ? <ResourceError title="Incident catalogue unavailable" error={incidentResource.error} retry={incidentResource.retry}/> : incidents.length ? <div className="incident-grid">{incidents.map(incident => <IncidentCardView key={incident.id} incident={incident}/>)}</div> : <EmptyState title="No incidents are available" body="The incident catalogue is currently empty." action={<Link to="/methodology" className="text-link">Read about the dataset <Icon name="arrow" size={14}/></Link>}/>}
+    </section>
+    <section className="overview-steps" aria-label="Investigation flow"><div><span>01</span><div><strong>Inspect signals</strong><small>Timeline, dependencies, metrics, logs, traces.</small></div></div><div><span>02</span><div><strong>Review a replay</strong><small>Ranked hypotheses with linked evidence.</small></div></div><div><span>03</span><div><strong>Approve a simulation</strong><small>Human acknowledgment; no external action.</small></div></div></section>
+    <div className="notice notice-info fixture-note"><span className="notice-symbol">i</span><div><strong>{dataMode === 'api' ? 'Synthetic incident dataset' : isStaticDemo ? 'Static portfolio preview' : 'Development fixture preview'}</strong><div>{dataMode === 'api' ? 'Incident data comes from the API. Stored replays do not call a model.' : isStaticDemo ? 'Scenarios and replays are bundled here; simulated approvals are saved in this browser. Live AI and server persistence are unavailable.' : 'Fixture mode was explicitly enabled for development. No API or model call is made.'}</div></div></div>
   </div>
 }
-
 function IncidentLibrary() {
   const [query, setQuery] = useState('')
   const [severity, setSeverity] = useState('all')
@@ -415,11 +421,94 @@ function Methodology() {
   </div>
 }
 
+type PreviewPreferences = {
+  workspace: string
+  timezone: string
+  density: 'comfortable' | 'compact'
+  incidentUpdates: boolean
+  weeklyDigest: boolean
+  evidenceNotes: boolean
+}
+const preferenceKey = 'incident-atlas.preview-preferences.v1'
+const defaultPreferences: PreviewPreferences = { workspace: 'Incident Atlas', timezone: 'UTC', density: 'comfortable', incidentUpdates: true, weeklyDigest: false, evidenceNotes: true }
+
+function readPreferences(): PreviewPreferences {
+  try {
+    const value = sessionStorage.getItem(preferenceKey)
+    return value ? { ...defaultPreferences, ...JSON.parse(value) as Partial<PreviewPreferences> } : defaultPreferences
+  } catch { return defaultPreferences }
+}
+
+function PreferenceRow({ title, description, checked, onChange }: { title: string; description: string; checked: boolean; onChange: () => void }) {
+  return <label className="setting-toggle-row"><span><strong>{title}</strong><small>{description}</small></span><input type="checkbox" checked={checked} onChange={onChange}/><i aria-hidden="true"/></label>
+}
+
+function SettingsPage() {
+  const { section = 'profile' } = useParams()
+  const navigate = useNavigate()
+  const { profile, saveProfile, signOut } = useAccount()
+  const { theme, toggleTheme } = useTheme()
+  const [preferences, setPreferences] = useState<PreviewPreferences>(readPreferences)
+  const [saved, setSaved] = useState(false)
+  const [name, setName] = useState(profile?.name ?? '')
+  const [email, setEmail] = useState(profile?.email ?? '')
+  useEffect(() => { try { sessionStorage.setItem(preferenceKey, JSON.stringify(preferences)) } catch { /* Preference state still works for this page. */ } }, [preferences])
+  useEffect(() => { document.documentElement.dataset.density = preferences.density }, [preferences.density])
+  useEffect(() => { setName(profile?.name ?? ''); setEmail(profile?.email ?? '') }, [profile?.name, profile?.email])
+  const updatePreference = <K extends keyof PreviewPreferences>(key: K, value: PreviewPreferences[K]) => setPreferences(current => ({ ...current, [key]: value }))
+  const chooseSection = (value: string) => navigate(`/settings/${value}`)
+  const exportSettings = () => {
+    const payload = { profile, preferences, appearance: theme, dataMode, exportedAt: new Date().toISOString(), note: 'Local preview settings only. No credentials or server account data.' }
+    const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'incident-atlas-preview-settings.json'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+  const saveAccount = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (name.trim().length < 2 || !/^\S+@\S+\.\S+$/.test(email.trim())) return
+    saveProfile({ name, email })
+    setSaved(true)
+    window.setTimeout(() => setSaved(false), 2800)
+  }
+  const sections = [
+    ['profile', 'Profile', 'Personal details'], ['workspace', 'Workspace', 'Name and locale'], ['appearance', 'Appearance', 'Theme and density'],
+    ['notifications', 'Notifications', 'Preview preferences'], ['integrations', 'Integrations', 'Connections and access'], ['privacy', 'Data & privacy', 'Local preview data'],
+  ] as const
+  const active = sections.find(([key]) => key === section) ?? sections[0]
+  return <div className="page-wrap settings-page">
+    <PageTitle eyebrow="WORKSPACE PREFERENCES" title="Settings" description="Manage your local preview profile and workspace preferences." actions={<SourceTag tone="blue">BROWSER PREVIEW</SourceTag>}/>
+    <div className="settings-layout">
+      <nav className="settings-nav" aria-label="Settings sections">{sections.map(([key, title, description]) => <button type="button" key={key} onClick={() => chooseSection(key)} className={active[0] === key ? 'settings-nav-item active' : 'settings-nav-item'} aria-current={active[0] === key ? 'page' : undefined}><span className="settings-nav-title">{title}</span><small>{description}</small></button>)}</nav>
+      <section className="settings-content" aria-labelledby="settings-section-title">
+        <div className="settings-content-heading"><div><span className="eyebrow">{active[1].toUpperCase()}</span><h2 id="settings-section-title">{active[1]}</h2><p>{active[2]} for this browser preview.</p></div><span className="settings-save-indicator" role="status">{saved ? 'Saved' : 'LOCAL PREVIEW'}</span></div>
+        {active[0] === 'profile' && <>
+          {!profile && <div className="notice notice-info settings-notice"><span className="notice-symbol">i</span><div><strong>Guest profile</strong><div>Create a temporary profile to personalize this workspace. This does not create a server account.</div></div><Link to="/register" className="text-link">Create profile <Icon name="arrow" size={14}/></Link></div>}
+          <form className="settings-form" onSubmit={saveAccount}>
+            <div className="profile-summary"><span className="avatar profile-avatar">{(profile?.name ?? 'Guest User').split(/\s+/).slice(0, 2).map(value => value[0]).join('').toUpperCase()}</span><div><strong>{profile?.name ?? 'Guest User'}</strong><small>{profile?.email ?? 'No preview profile yet'}</small></div><SourceTag>{profile ? 'PREVIEW PROFILE' : 'GUEST'}</SourceTag></div>
+            <div className="settings-field-grid"><label className="settings-field"><span>Display name</span><input value={name} onChange={event => setName(event.target.value)} placeholder="Your name" autoComplete="name"/></label><label className="settings-field"><span>Email address</span><input type="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="you@example.com" autoComplete="email"/></label></div>
+            <p className="settings-help">Your profile is stored in session storage on this device only. It is not connected to authentication.</p>
+            <div className="settings-actions"><button className="button button-primary" type="submit">Save profile</button><Link className="button button-secondary" to="/register">Create preview access</Link></div>
+          </form>
+        </>}
+        {active[0] === 'workspace' && <div className="settings-form"><label className="settings-field"><span>Workspace name</span><input value={preferences.workspace} onChange={event => updatePreference('workspace', event.target.value)} maxLength={48}/><small>Shown only in this local preview.</small></label><label className="settings-field"><span>Time zone</span><select value={preferences.timezone} onChange={event => updatePreference('timezone', event.target.value)}><option value="UTC">UTC — Coordinated Universal Time</option><option value="America/New_York">America/New_York</option><option value="Europe/London">Europe/London</option><option value="Asia/Colombo">Asia/Colombo</option><option value="Asia/Tokyo">Asia/Tokyo</option></select><small>Incident timestamps remain labeled in UTC to preserve source accuracy.</small></label><div className="settings-inline-note"><Icon name="clock" size={17}/><span><strong>Incident time remains UTC</strong><small>Changing this preference does not alter fixture timestamps or API data.</small></span></div></div>}
+        {active[0] === 'appearance' && <div className="settings-form"><div className="setting-block"><strong>Color theme</strong><p>Choose the appearance for this browser. The selection is remembered on this device.</p><div className="theme-options"><button type="button" aria-pressed={theme === 'light'} className={theme === 'light' ? 'theme-option active' : 'theme-option'} onClick={() => theme === 'dark' && toggleTheme()}><span className="theme-swatch theme-swatch-light"/>Light</button><button type="button" aria-pressed={theme === 'dark'} className={theme === 'dark' ? 'theme-option active' : 'theme-option'} onClick={() => theme === 'light' && toggleTheme()}><span className="theme-swatch theme-swatch-dark"/>Dark</button></div></div><div className="setting-block"><strong>Interface density</strong><p>Adjust the amount of space between controls and incident details.</p><div className="density-options"><label><input type="radio" name="density" checked={preferences.density === 'comfortable'} onChange={() => updatePreference('density', 'comfortable')}/><span><b>Comfortable</b><small>More breathing room</small></span></label><label><input type="radio" name="density" checked={preferences.density === 'compact'} onChange={() => updatePreference('density', 'compact')}/><span><b>Compact</b><small>More information at a glance</small></span></label></div></div></div>}
+        {active[0] === 'notifications' && <div className="settings-form"><div className="settings-intro-card"><strong>Notification preferences</strong><p>These controls save as local preview preferences. This demo does not send email or browser notifications.</p></div><PreferenceRow title="Incident updates" description="Show a preview preference for new incident activity." checked={preferences.incidentUpdates} onChange={() => updatePreference('incidentUpdates', !preferences.incidentUpdates)}/><PreferenceRow title="Weekly summary" description="Keep a local preference for a weekly workspace digest." checked={preferences.weeklyDigest} onChange={() => updatePreference('weeklyDigest', !preferences.weeklyDigest)}/><PreferenceRow title="Evidence annotations" description="Show context notes beside evidence-linked hypotheses." checked={preferences.evidenceNotes} onChange={() => updatePreference('evidenceNotes', !preferences.evidenceNotes)}/></div>}
+        {active[0] === 'integrations' && <div className="settings-form"><div className="settings-intro-card"><strong>Connected services</strong><p>No integrations are connected in this portfolio preview. No external credentials are requested or stored.</p></div><div className="integration-card"><span className="integration-icon"><Icon name="server" size={19}/></span><span><strong>Incident data</strong><small>{dataMode === 'fixtures' ? isStaticDemo ? 'Bundled synthetic fixture data' : 'Development fixture adapter' : 'FastAPI backend data source'}</small></span><SourceTag tone="blue">{dataMode === 'fixtures' ? 'DEMO DATA' : 'API SOURCE'}</SourceTag></div><div className="integration-card"><span className="integration-icon"><Icon name="activity" size={19}/></span><span><strong>OpenTelemetry</strong><small>No external collector or live telemetry is connected.</small></span><SourceTag>NOT CONNECTED</SourceTag></div><div className="integration-card"><span className="integration-icon"><Icon name="file" size={19}/></span><span><strong>AI provider</strong><small>Live AI is not available in this static portfolio preview.</small></span><SourceTag tone="amber">DISABLED</SourceTag></div></div>}
+        {active[0] === 'privacy' && <div className="settings-form"><div className="settings-intro-card"><strong>What this preview stores</strong><p>Theme preference is kept in browser local storage. Profile and preference values are limited to this tab session. Passwords are discarded. Incident approvals follow the active data source’s documented persistence behavior.</p></div><div className="privacy-facts"><div><span>Data source</span><b>{dataMode === 'fixtures' ? isStaticDemo ? 'Bundled synthetic data' : 'Development fixtures' : 'Backend API'}</b></div><div><span>Live AI</span><b>{dataMode === 'fixtures' ? 'Unavailable' : 'Capability gated'}</b></div><div><span>Connected systems</span><b>None</b></div><div><span>Account service</span><b>Not configured</b></div></div><div className="settings-actions"><button className="button button-secondary" type="button" onClick={exportSettings}>Export preview settings</button><button className="button button-secondary" type="button" onClick={() => { signOut(); setName(''); setEmail(''); setSaved(false) }}>Clear local profile</button></div><small className="settings-help">Clearing the profile ends this local preview session. It does not delete any saved incident approval.</small></div>}
+      </section>
+    </div>
+    <div className="settings-footnote"><span className="status-dot"/>Changes are local preview preferences. They do not configure production services or user accounts.</div>
+  </div>
+}
+
 function NotFound() { return <div className="page-wrap"><PageTitle eyebrow="404 · ROUTE NOT FOUND" title="This page is off the map" description="The link may be out of date. The synthetic incident library is still available."/><Link to="/" className="button button-primary">Go to overview <Icon name="arrow" size={15}/></Link></div> }
 
 function App() {
   const capabilities = useResource('demo-capabilities', signal => dataClient.getCapabilities(signal))
-  return <CapabilitiesContext.Provider value={capabilities}><Shell><Routes><Route path="/" element={<Dashboard/>}/><Route path="/incidents" element={<IncidentLibrary/>}/><Route path="/incidents/:incidentId" element={<IncidentWorkspace/>}/><Route path="/investigations/:reportId" element={<InvestigationReportPage/>}/><Route path="/investigations/:reportId/mitigation" element={<MitigationReview/>}/><Route path="/methodology" element={<Methodology/>}/><Route path="*" element={<NotFound/>}/></Routes></Shell></CapabilitiesContext.Provider>
+  return <CapabilitiesContext.Provider value={capabilities}><Routes><Route path="/login" element={<SignInPage/>}/><Route path="/register" element={<RegisterPage/>}/><Route element={<Shell/>}><Route path="/" element={<Dashboard/>}/><Route path="/incidents" element={<IncidentLibrary/>}/><Route path="/incidents/:incidentId" element={<IncidentWorkspace/>}/><Route path="/investigations/:reportId" element={<InvestigationReportPage/>}/><Route path="/investigations/:reportId/mitigation" element={<MitigationReview/>}/><Route path="/methodology" element={<Methodology/>}/><Route path="/settings" element={<SettingsPage/>}/><Route path="/settings/:section" element={<SettingsPage/>}/><Route path="*" element={<NotFound/>}/></Route></Routes></CapabilitiesContext.Provider>
 }
 
 function time(value: string) { return new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC', hourCycle: 'h23' }).format(new Date(value)) }

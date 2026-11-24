@@ -41,6 +41,10 @@ In the Vercel project settings use:
 
 Because the fixture adapters import the shared JSON under the repository's `data/incidents/` directory, enable **Include source files outside of the Root Directory in the Build Step** in Vercel's Root Directory settings. Confirm that this setting is on before deploying. The checked-in `vercel.json` rewrites client-side React Router paths to `index.html` so refreshing an incident or replay URL works.
 
+## Account and settings preview
+
+The UI includes `/login`, `/register`, and a full `/settings` area for profile, workspace, appearance, notification preferences, integrations, and privacy. These screens are a frontend preview, not real authentication: there is no account service, password storage, or server-side profile persistence. Password input is used only for local form validation and discarded at submit; the form warns visitors to use a throwaway value. The profile is held in the current tab's session storage, theme choice in browser local storage, and other preferences in session storage. Incident browsing and replay remain available to guests.
+
 The `static-demo` production build check fails if `VITE_API_BASE_URL` is also set or if the mode is omitted. See [`.env.vercel.example`](.env.vercel.example) for the non-secret build variable.
 
 ## Checks

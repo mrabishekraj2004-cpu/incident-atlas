@@ -1,51 +1,55 @@
-# Incident Atlas UI design
+# Incident Atlas interface design
 
-**Status:** Step 3 implementation record  
-**Scope:** React/Vite fixture preview; backend reads remain for Step 4.
+**Status:** Current frontend design record  
+**Scope:** React/Vite visitor experience, including local preview access and preferences.
 
-## Product presentation
+## Product direction
 
-Incident Atlas is presented as a working incident investigation console rather than a marketing page. The overview leads with the evidence-to-hypothesis loop, then offers the three synthetic cases. Scenario cards state severity, primary service, incident date/time, fixture version, and replay availability. The UI never requires a sign-in or visitor API key.
+Incident Atlas is an incident investigation workspace. The interface prioritizes fast scanning, evidence provenance, and the human approval boundary. It keeps the incident library and replay journey usable without an account or API key. Account screens personalize a local preview only; they are not connected to an authentication service.
 
 ## Visual system
 
 | Element | Decision |
 |---|---|
-| Canvas and panels | Cool gray canvas (`#f4f6f8`), white panels, thin blue-gray borders, restrained shadows. |
-| Navigation and overview hero | Deep navy (`#132535`) anchors the console and gives the evidence illustration contrast. |
-| Evidence and action | Teal marks selected data, evidence links, and the primary action. It does not communicate confidence. |
-| Severity and uncertainty | Amber is used for SEV-2 and simulation boundaries; red is reserved for errors and failed validation. |
-| Typography | System sans-serif for readable UI copy; system monospace for IDs, hashes, and compact telemetry metadata. No remote font dependency. |
-| Spacing and shape | Four/eight-pixel rhythm, 8–12 px panel corners, consistent 13–17 px card padding. |
-| Motion | Short hover and focus transitions only; all motion is reduced under `prefers-reduced-motion`. |
-
-Color does not carry status by itself: severity, confidence, source, and approval states all have visible text labels. The design avoids probability-style scores; confidence remains qualitative (`low`, `medium`, `high`) and explicitly uncalibrated.
+| Brand | Text-only “Incident Atlas” wordmark. No logo asset or decorative logo symbol. |
+| Light surfaces | Warm gray `#f4f6f8` canvas, white workspace panels, graphite text, and quiet gray borders. |
+| Accent | Cobalt `#315eb5` for primary actions, focus, and selected navigation. It does not signal severity or confidence. |
+| Dark surfaces | Graphite `#151a20` canvas, layered slate panels, light text, and accessible pale cobalt actions. |
+| Status colors | Red, amber, and green remain reserved for severity, warnings, errors, and success states, always paired with text. |
+| Typography | System sans-serif for interface copy and monospace for hashes, IDs, and telemetry metadata. No remote font dependency. |
+| Layout | Fixed desktop workspace rail, compact navigation at tablet widths, task-focused cards, and stacked mobile settings/forms. |
+| Motion | Short interaction transitions; `prefers-reduced-motion` disables animation and smooth scrolling. |
 
 ## Pages and interactions
 
-| Page | Main content and interaction |
+| Page | Experience |
 |---|---|
-| `/` | Product overview, no-key statement, three fixture cards, visitor journey, and prominent fixture/no-model-call label. |
-| `/incidents` | Search and severity filters, resettable empty state, and incident cards. |
-| `/incidents/:incidentId` | Incident symptom, date-bounded window, service inventory and call relationships, filtered change/alert timeline, telemetry tabs for metrics/logs/traces, evidence detail, and replay/live choices. Live remains disabled with its reason. |
-| `/investigations/:reportId` | Persistent **STORED REPLAY** provenance, report/snapshot metadata, ranked hypotheses, confidence notes, uncertainty, baseline comparator, and direct links to cited evidence. |
-| `/investigations/:reportId/mitigation` | Proposal review, explicit simulation boundary, acknowledgment dialog, and local preview confirmation. |
-| `/methodology` | Synthetic data and evaluation explanation, replay/live distinction, safety boundary, and interactive examples of loading/empty/timeout/invalid/unavailable/partial-data states. The state examples are labeled illustrative, not current API results. |
+| `/` | Product overview, provenance summary, and three synthetic scenarios. |
+| `/incidents` | Search, severity filtering, replay availability, and incident cards. |
+| `/incidents/:incidentId` | Symptoms, timeline, service dependencies, telemetry tabs, and links to stored or permitted investigations. |
+| `/investigations/:reportId` | Stored replay provenance, ranked uncertain hypotheses, source-linked evidence, and report metadata. |
+| `/investigations/:reportId/mitigation` | Human review, explicit simulation-only acknowledgment, and the resulting approval state. |
+| `/methodology` | Synthetic data limitations, replay/live distinction, evaluation explanation, and illustrative service states. |
+| `/login` | Preview-only sign-in form. It accepts a throwaway password solely for local form interaction; it is discarded and never sent or saved. |
+| `/register` | Preview-only registration form that creates a browser-session display profile, not an account. |
+| `/settings/profile` | Edit local display name and email. |
+| `/settings/workspace` | Local workspace label and display timezone preference; source incident times stay UTC. |
+| `/settings/appearance` | Persistent light/dark theme and session-only density preference. |
+| `/settings/notifications` | Session-only preference controls; no messages or notifications are sent. |
+| `/settings/integrations` | Read-only connection inventory; no credentials or live integrations are configured. |
+| `/settings/privacy` | Explains browser storage and data boundaries, exports preview settings, or clears the local profile. |
 
-The three telemetry tabs are a keyboard arrow-key tab set. Metric chart points can be selected with Enter or Space. Timeline filters and the state examples use labeled buttons. Evidence links preserve both the item ID and evidence snapshot ID in the URL; the detail panel displays the exact fixture record and its snapshot metadata. The approval dialog uses a native modal, supports Escape, traps focus, and requires a checked acknowledgment.
+The primary navigation remains available to guests. Settings links preserve a clear indication that values are local preview preferences. Sign-out ends the browser-session profile and does not delete incident approvals.
 
-## Provenance and service states
+## Authentication and data boundaries
 
-- Incident and telemetry pages carry a **FIXTURE PREVIEW** label; browsing them makes no model call.
-- Replay reports say **STORED REPLAY**, include `model_call_made: false`, `curated-fixture`, `curated-replay-v1`, zero token usage, original generation time, snapshot ID, and snapshot hash.
-- The live action is disabled in Step 3. It does not silently open a replay, submit a request, or label fixture content as a live result.
-- Simulated approval is local component state only. The UI states `simulation_only=true` and `external_action_performed=false`, and says no backend write or external action occurred.
-- Async client adapters provide loading, retryable read errors, empty results, and partial-panel behavior. Methodology demonstrates timeout and invalid-result messaging without claiming those failures occurred.
+- There is no account backend, authentication provider, password storage, or server-side profile persistence in this frontend.
+- Login and registration pages visibly explain the preview boundary and warn visitors not to enter a real password.
+- Passwords are read only for client-side validation and are discarded on submission; only display name and email are held in `sessionStorage`.
+- Appearance is held in `localStorage`; other preview preferences use `sessionStorage`.
+- Settings do not configure production services. Integrations are informational and disabled.
+- Fixture, API, stored replay, and live investigation provenance continue to come from the existing data adapter and API contracts. Failed API requests never fall back silently to fixtures.
 
 ## Accessibility and responsive behavior
 
-The app uses a skip link, semantic navigation/main/footer, visible keyboard focus, labeled filters and tabs, announced loading/error regions, readable evidence IDs, accessible chart descriptions, and text-first service relationships. At 950 px the sidebar becomes a compact top navigation; at 720 px workspaces stack; at 520 px cards and panels become single-column and controls wrap. The dependency relationships remain textual at every size. System fonts and CSS are self-contained. A reduced-motion media rule suppresses transitions and smooth scrolling.
-
-## Backend contract fit
-
-The `contracts.ts` interfaces mirror the FastAPI incident, timeline, dependency, telemetry, evidence, replay report, hypothesis, baseline, and approval response fields. `fixtures.ts` adapts the exact scenario and replay JSON into those shapes. The UI makes no backend contract change. Step 4 should map API `items` envelopes to the same types and fetch cited records with `GET /api/v1/snapshots/{snapshot_id}/evidence/{evidence_id}`; citation navigation already carries the snapshot ID. The page design does not assume that a stored replay is live analysis.
+Pages use semantic navigation, main content, labeled form fields, visible focus rings, keyboard-operable buttons and links, announced status/errors, and text labels alongside status colors. At tablet widths, the rail becomes a compact top navigation; settings sections become a responsive grid, and forms and integration cards reflow at phone widths. A reduced-motion rule suppresses animation and smooth scrolling.
