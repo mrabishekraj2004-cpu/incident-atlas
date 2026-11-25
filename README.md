@@ -10,15 +10,7 @@ Incident Atlas is an incident investigation demo for exploring synthetic service
 
 The public site is a static frontend using bundled synthetic fixtures. It does not connect to the FastAPI service or PostgreSQL. Approvals are stored in the current browser; live analysis and server persistence are unavailable.
 
-## 3. Demo video link
-
-Walkthrough video: **not published yet**.
-
-## 4. Screenshots
-
-No screenshots are included in this repository.
-
-## 5. Project overview and objectives
+## 3. Project overview and objectives
 
 Incident response often means piecing together a timeline from service maps, metrics, logs, traces, and deployment events. Incident Atlas demonstrates how those signals can be gathered around a single incident and presented with traceable evidence.
 
@@ -31,7 +23,7 @@ Project objectives:
 
 All incident data is authored synthetic data shaped like OpenTelemetry records. It is not customer telemetry or a set of real production incidents.
 
-## 6. Key features
+## 4. Key features
 
 - Browse synthetic incidents and inspect each incident's timeline and service dependencies.
 - Explore metrics, logs, and traces for the selected incident.
@@ -41,7 +33,7 @@ All incident data is authored synthetic data shaped like OpenTelemetry records. 
 - Use an API-backed FastAPI/PostgreSQL mode locally. Its optional live-analysis route is disabled by default.
 - View account and settings screens as frontend previews; they do not provide real authentication or server-side profiles.
 
-## 7. Technology stack
+## 5. Technology stack
 
 | Area | Technology |
 |---|---|
@@ -52,7 +44,7 @@ All incident data is authored synthetic data shaped like OpenTelemetry records. 
 | Hosting | Vercel for the public static frontend; FastAPI and PostgreSQL are not publicly deployed |
 | CI | GitHub Actions |
 
-## 8. System architecture
+## 6. System architecture
 
 The public deployment serves a static frontend and bundled fixtures. The repository also supports an API-backed local setup for development.
 
@@ -71,13 +63,13 @@ flowchart TD
 
 The public Vercel build uses the static-demo mode and does not make API requests. The local API path serves synthetic fixtures, saved replays, and optional investigation endpoints. If enabled in a separately configured environment, the live-analysis path is server-side and bounded by evidence and request limits.
 
-## 9. Software design diagrams
+## 7. Software design diagrams
 
 - **Investigation sequence diagram:** [Architecture and workflow](docs/architecture.md#investigation-workflow)
 - **Database entity relationship diagram:** [Data design](docs/data-design.md#relationships)
-- **Infrastructure and component diagram:** the current public/local split is shown in [System architecture](#8-system-architecture). The deployment runbook describes the separate, optional API-hosting design in [docs/deployment.md](docs/deployment.md).
+- **Infrastructure and component diagram:** the current public/local split is shown in [System architecture](#6-system-architecture). The deployment runbook describes the separate, optional API-hosting design in [docs/deployment.md](docs/deployment.md).
 
-## 10. Folder structure
+## 8. Folder structure
 
 ```text
 .
@@ -99,7 +91,7 @@ The public Vercel build uses the static-demo mode and does not make API requests
 └── Dockerfile                 # API container image
 ```
 
-## 11. Installation and setup
+## 9. Installation and setup
 
 For the full local stack, install Docker Engine with the Compose plugin, then run this from the repository root:
 
@@ -119,7 +111,7 @@ VITE_DATA_MODE=static-demo npm run build
 
 For manual API setup and development commands, see [api/README.md](api/README.md) and [web/README.md](web/README.md).
 
-## 12. Environment variables
+## 10. Environment variables
 
 The checked-in example files document configuration without containing production credentials:
 [frontend](web/.env.example), [Vercel static demo](web/.env.vercel.example), and [API](api/.env.example).
@@ -139,7 +131,7 @@ The checked-in example files document configuration without containing productio
 
 Never put `OPENAI_API_KEY`, database credentials, or other server secrets in a `VITE_` variable. Frontend `VITE_` values are included in the browser bundle.
 
-## 13. API documentation
+## 11. API documentation
 
 The API base path is `/api/v1`. Full request and response contracts are in [docs/api-design.md](docs/api-design.md); a running local API also exposes [OpenAPI JSON](http://localhost:8000/openapi.json) and [Swagger UI](http://localhost:8000/docs).
 
@@ -175,7 +167,7 @@ curl -X POST http://localhost:8000/api/v1/replays/replay-cache-v1/mitigation-app
   -d '{"hypothesis_id":"<hypothesis-id>","mitigation_id":"<mitigation-id>","simulation_acknowledged":true}'
 ```
 
-## 14. Testing
+## 12. Testing
 
 The CI workflow in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) covers PostgreSQL migrations and backend integration tests, Python lint and dependency auditing, frontend tests/typechecking/build and dependency auditing, API container startup, and desktop/mobile browser flows. The static-demo/Vercel change passed [GitHub Actions PR run #3](https://github.com/mrabishekraj2004-cpu/incident-atlas/actions/runs/45265136934) before it was merged; see [Actions](https://github.com/mrabishekraj2004-cpu/incident-atlas/actions) for the current branch status.
 
@@ -196,7 +188,7 @@ npm audit --audit-level=moderate
 
 The scenarios and evaluation cases are synthetic regression data; their results do not measure accuracy on real production incidents. No genuine live provider result is part of the public demo.
 
-## 15. Deployment instructions
+## 13. Deployment instructions
 
 The public frontend is deployed on Vercel from the `web/` root directory:
 
@@ -208,7 +200,7 @@ The public frontend is deployed on Vercel from the `web/` root directory:
 
 The deployed site is [incident-atlas-demo.vercel.app](https://incident-atlas-demo.vercel.app/). The FastAPI service and PostgreSQL database are not deployed. [docs/deployment.md](docs/deployment.md) contains the separate backend hosting plan; its backend steps are not part of the current public deployment.
 
-## 16. Challenges and solutions
+## 14. Challenges and solutions
 
 | Challenge | Engineering decision |
 |---|---|
@@ -218,16 +210,14 @@ The deployed site is [incident-atlas-demo.vercel.app](https://incident-atlas-dem
 | Demonstrate an approval step without affecting operations | Store explicit simulation-only approvals; provide no external remediation executor. |
 | Keep a dependable public demo when backend hosting is absent | Ship a static Vercel build with bundled synthetic fixtures and browser-local approvals. |
 
-## 17. Future improvements
+## 15. Future improvements
 
-- Publish a short walkthrough video and add its link here.
-- Complete a mobile walkthrough of the live Vercel site and capture deployment screenshots.
 - If a hosting budget and account are available, deploy the API and database and connect them to the frontend.
 - Replace account/settings preview screens with real authentication and server-side persistence if the product needs user accounts.
 - Verify a genuine live provider request and its production limits before enabling live analysis.
 - Select and add a project license.
 
-## 18. Author and license
+## 16. Author and license
 
 - **Author:** [@mrabishekraj2004-cpu](https://github.com/mrabishekraj2004-cpu)
 - **Repository:** [mrabishekraj2004-cpu/incident-atlas](https://github.com/mrabishekraj2004-cpu/incident-atlas)
