@@ -16,17 +16,7 @@ Walkthrough video: **not published yet**.
 
 ## 4. Screenshots
 
-These screenshots come from the local CI app with synthetic data. They show application flows and do not represent screenshots captured from the public deployment.
-
-![Desktop incident dashboard](docs/screenshots/01-dashboard-desktop.png)
-
-![Incident detail with timeline, dependencies, and telemetry](docs/screenshots/02-incident-detail-desktop.png)
-
-![Stored investigation replay with evidence references](docs/screenshots/03-stored-replay-desktop.png)
-
-![Simulated mitigation approval](docs/screenshots/04-simulated-approval-desktop.png)
-
-![Mobile incident dashboard](docs/screenshots/05-dashboard-mobile.png)
+No screenshots are included in this repository.
 
 ## 5. Project overview and objectives
 
@@ -99,7 +89,7 @@ The public Vercel build uses the static-demo mode and does not make API requests
 │   ├── incidents/            # Public synthetic incident fixtures and replays
 │   └── evaluation/           # Separate local/CI evaluation data
 ├── docs/
-│   └── screenshots/          # Local CI screenshots
+│   └── docs and project documentation
 ├── web/
 │   ├── src/                  # React application and API/data clients
 │   └── tests/                # Frontend and browser smoke checks

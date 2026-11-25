@@ -35,27 +35,7 @@ The application code is at commit [76392ba](https://github.com/mrabishekraj2004-
 
 ## Browser screenshots
 
-These screenshots were captured by the local CI browser workflow against local Vite, FastAPI, and PostgreSQL services seeded with synthetic scenarios. They show local CI behavior only; they are not screenshots of the public Vercel deployment. The artifact is retained with the linked GitHub Actions run.
-
-![Incident Atlas desktop dashboard with the no-sign-in synthetic incident entry point.](screenshots/01-dashboard-desktop.png)
-
-_Desktop dashboard — local CI app, synthetic fixture catalogue._
-
-![Incident detail view showing the incident timeline, service relationships, and telemetry explorer.](screenshots/02-incident-detail-desktop.png)
-
-_Incident detail — local CI API data, with metrics, logs, and traces available for inspection._
-
-![Stored replay report with saved-result provenance and linked evidence.](screenshots/03-stored-replay-desktop.png)
-
-_Stored replay — local CI API response, explicitly labeled as a replay rather than live AI._
-
-![Simulation approval result confirming that no external action was performed.](screenshots/04-simulated-approval-desktop.png)
-
-_Approval — local CI API response persisted with simulation-only fields._
-
-![Mobile dashboard at a narrow viewport, captured during the local CI browser run.](screenshots/05-dashboard-mobile.png)
-
-_Mobile dashboard — 390 px viewport in the local CI browser run._
+Screenshots are not included in this repository.
 
 ## Remaining release gates
 
