@@ -18,7 +18,7 @@ No backend API contract changes were needed. Production hosting must set `VITE_A
 
 ## Local setup
 
-Start PostgreSQL, migrate/seed the API using [`api/README`](../api/README), and run FastAPI on `127.0.0.1:8000`. Then:
+Start PostgreSQL, migrate/seed the API using [`api/README.md`](../api/README.md), and run FastAPI on `127.0.0.1:8000`. Then:
 
 ```bash
 cd web
@@ -70,7 +70,7 @@ uv run python -m incident_atlas.cli seed-runtime
 uv run python -m incident_atlas.cli fixture-manifest
 ```
 
-Compare both fixture manifests with the hashes in [`backend-handoff`](backend-handoff), and require the PostgreSQL suite to complete without skips before accepting the database gate.
+Compare both fixture manifests with the hashes in [`backend-handoff.md`](backend-handoff.md), and require the PostgreSQL suite to complete without skips before accepting the database gate.
 
 ## Browser gate and remaining work
 

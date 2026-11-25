@@ -27,4 +27,4 @@ This inventory is based on the Step 1–4 handoffs and a fresh workspace inspect
 
 ## Step 5 success record
 
-This inventory is not a completion claim. Final verification outcomes, exact commands, resource URLs, and remaining blockers belong in `step5-handoff`.
+This inventory is not a completion claim. Final verification outcomes, exact commands, resource URLs, and remaining blockers belong in `step5-handoff.md`.

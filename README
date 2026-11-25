@@ -65,9 +65,9 @@ The public Vercel build uses the static-demo mode and does not make API requests
 
 ## 7. Software design diagrams
 
-- **Investigation sequence diagram:** [Architecture and workflow](docs/architecture#investigation-workflow)
-- **Database entity relationship diagram:** [Data design](docs/data-design#relationships)
-- **Infrastructure and component diagram:** the current public/local split is shown in [System architecture](#6-system-architecture). The deployment runbook describes the separate, optional API-hosting design in [docs/deployment](docs/deployment).
+- **Investigation sequence diagram:** [Architecture and workflow](docs/architecture.md#investigation-workflow)
+- **Database entity relationship diagram:** [Data design](docs/data-design.md#relationships)
+- **Infrastructure and component diagram:** the current public/local split is shown in [System architecture](#6-system-architecture). The deployment runbook describes the separate, optional API-hosting design in [docs/deployment.md](docs/deployment.md).
 
 ## 8. Folder structure
 
@@ -109,7 +109,7 @@ npm ci
 VITE_DATA_MODE=static-demo npm run build
 ```
 
-For manual API setup and development commands, see [api/README](api/README) and [web/README](web/README).
+For manual API setup and development commands, see [api/README.md](api/README.md) and [web/README.md](web/README.md).
 
 ## 10. Environment variables
 
@@ -133,7 +133,7 @@ Never put `OPENAI_API_KEY`, database credentials, or other server secrets in a `
 
 ## 11. API documentation
 
-The API base path is `/api/v1`. Full request and response contracts are in [docs/api-design](docs/api-design); a running local API also exposes [OpenAPI JSON](http://localhost:8000/openapi.json) and [Swagger UI](http://localhost:8000/docs).
+The API base path is `/api/v1`. Full request and response contracts are in [docs/api-design.md](docs/api-design.md); a running local API also exposes [OpenAPI JSON](http://localhost:8000/openapi.json) and [Swagger UI](http://localhost:8000/docs).
 
 | Method | Endpoint | Purpose |
 |---|---|---|
@@ -198,7 +198,7 @@ The public frontend is deployed on Vercel from the `web/` root directory:
 4. Enable **Include source files outside of the Root Directory in the Build Step**, because the frontend imports synthetic fixtures from `data/incidents/`.
 5. Keep the checked-in Vercel rewrite so direct navigation and refreshes work on app routes.
 
-The deployed site is [incident-atlas-demo.vercel.app](https://incident-atlas-demo.vercel.app/). The FastAPI service and PostgreSQL database are not deployed. [docs/deployment](docs/deployment) contains the separate backend hosting plan; its backend steps are not part of the current public deployment.
+The deployed site is [incident-atlas-demo.vercel.app](https://incident-atlas-demo.vercel.app/). The FastAPI service and PostgreSQL database are not deployed. [docs/deployment.md](docs/deployment.md) contains the separate backend hosting plan; its backend steps are not part of the current public deployment.
 
 ## 14. Challenges and solutions
 
@@ -221,4 +221,4 @@ The deployed site is [incident-atlas-demo.vercel.app](https://incident-atlas-dem
 
 - **Author:** [@mrabishekraj2004-cpu](https://github.com/mrabishekraj2004-cpu)
 - **Repository:** [mrabishekraj2004-cpu/incident-atlas](https://github.com/mrabishekraj2004-cpu/incident-atlas)
-- **License:** No license has been selected or added. See [docs/licensing-decision](docs/licensing-decision).
+- **License:** No license has been selected or added. See [docs/licensing-decision.md](docs/licensing-decision.md).
