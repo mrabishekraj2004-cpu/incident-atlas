@@ -86,7 +86,7 @@ Evidence IDs resolve to immutable rows in a snapshot. Each evidence item carries
 
 ## Implementation boundary
 
-Step 1 produces documents only. Step 2 implements the backend contract and scenario loaders. Frontend work, deployment resources, and actual CI wiring remain later backlog items. See [implementation backlog](implementation-backlog.md).
+Step 1 produces documents only. Step 2 implements the backend contract and scenario loaders. Frontend work, deployment resources, and actual CI wiring remain later backlog items. See [implementation backlog](implementation-backlog).
 
 ## Reference documentation consulted
 

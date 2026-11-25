@@ -129,4 +129,4 @@ The API does not claim successful diagnosis: model outputs and curated replay fi
 
 ## Step 5 data-contract amendment
 
-Step 5 aligned the strict public `RuleFire` response schema with the deterministic rules object by including its already-public signal `label` alongside `rule_id` and cited evidence IDs. The three stored replays and the development fixture adapter now carry those labels consistently. Runtime evidence snapshot content and snapshot hashes are unchanged. The amended replay JSON raw-file SHA-256 is recorded in [`step5-handoff.md`](step5-handoff.md).
+Step 5 aligned the strict public `RuleFire` response schema with the deterministic rules object by including its already-public signal `label` alongside `rule_id` and cited evidence IDs. The three stored replays and the development fixture adapter now carry those labels consistently. Runtime evidence snapshot content and snapshot hashes are unchanged. The amended replay JSON raw-file SHA-256 is recorded in [`step5-handoff`](step5-handoff).

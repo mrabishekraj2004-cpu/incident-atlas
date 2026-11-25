@@ -2,7 +2,7 @@
 name = "incident-atlas-api"
 version = "0.1.0"
 description = "Bounded AI-assisted incident investigation API for Incident Atlas"
-readme = "README.md"
+readme = { file = "README", "content-type" = "text/markdown" }
 requires-python = ">=3.12,<3.13"
 dependencies = [
   "alembic>=1.17,<2",

@@ -1,6 +1,6 @@
 # Step 3 handoff — UI/UX design (historical)
 
-Step 4 replaced the normal fixture reads with the API integration described in [frontend-integration-handoff.md](frontend-integration-handoff.md). This file records the original Step 3 state and its carried-forward gates; read the Step 4 handoff for current behavior and checks.
+Step 4 replaced the normal fixture reads with the API integration described in [frontend-integration-handoff](frontend-integration-handoff). This file records the original Step 3 state and its carried-forward gates; read the Step 4 handoff for current behavior and checks.
 
 **Status:** UI implemented on typed fixture adapters. Backend integration remains Step 4 work.  
 **Fixture version:** `1.0.0`  
@@ -15,7 +15,7 @@ Step 4 replaced the normal fixture reads with the API integration described in [
 - Separate mitigation review route with acknowledgment modal and an explicitly local simulation confirmation.
 - Methodology page and illustrative loading, empty, timeout, invalid-result, unavailable-service, and partial-data states.
 - Async typed client boundary so Step 4 can replace the fixture adapter with API reads while keeping the response shapes and page structure.
-- Visual decisions and accessibility/responsive rules in [ui-design.md](ui-design.md).
+- Visual decisions and accessibility/responsive rules in [ui-design](ui-design).
 
 Fixture adapters import `data/incidents/scenarios.json` and `data/incidents/replays.json`. They do not import `data/evaluation/labels.json`. All three replay reports reference only evidence IDs that exist in their corresponding fixture snapshots. Snapshot IDs and hashes match the values recorded by the Step 2 backend handoff. The rules baseline remains a comparator and the UI never calls its signal labels ground truth.
 
@@ -39,7 +39,7 @@ Checks run during Step 3:
 | `npm run build` | Passed: TypeScript project build and Vite production bundle. |
 | `npm run typecheck` | Passed. |
 | Replay evidence reference audit against scenario JSON | Passed: cache 6 references, pool 6, gateway 8; no missing IDs. |
-| Backend fixture snapshot hash comparison using `api/.venv/bin/python` | Passed: all three hashes match `docs/backend-handoff.md`. |
+| Backend fixture snapshot hash comparison using `api/.venv/bin/python` | Passed: all three hashes match `docs/backend-handoff`. |
 | Desktop/mobile browser preview | Not completed: the browser tool returned `ERR_CONNECTION_REFUSED` for `127.0.0.1:5173`; local headless Chromium aborted while creating its process socket with `Operation not permitted`. |
 
 The source review covered responsive breakpoints at 950/720/520 px, keyboard tabs and evidence-point actions, focus styling, semantic landmarks, loading/error announcements, textual dependency fallback, and reduced-motion CSS. A WCAG relative-luminance spot check measured core secondary text at 5.3:1 on white and 4.89:1 on the canvas, with selected status pairs at 5.36:1 or higher. Since the rendered page could not be opened in the available browser, desktop/mobile visual fit, a full-page contrast audit, and the complete click-through journey still need a browser preview on a runner that can reach the local server. Do not treat those visual checks as passed.

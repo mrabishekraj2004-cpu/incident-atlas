@@ -32,7 +32,7 @@ Compose starts PostgreSQL 17, waits for readiness, and runs a one-shot bootstrap
 
 1. Approve a recurring spending cap and confirm the Render and Netlify accounts have billing and project access. Include the database plan, web-service plan, backups, bandwidth, and any usage charges in the cap.
 2. Keep `LIVE_ANALYSIS_ENABLED=false`. No model key is needed for the public replay journey. Do not add a model key until the shared request cap, real proxy trust path, and provider verification are ready.
-3. Confirm the repository revision has green CI and the release ZIP inspection job passed. No license decision is part of the technical deployment gate; see [license decision](licensing-decision.md).
+3. Confirm the repository revision has green CI and the release ZIP inspection job passed. No license decision is part of the technical deployment gate; see [license decision](licensing-decision).
 
 ## Staged deployment order
 
@@ -119,7 +119,7 @@ The command reads the tracked Git file list, writes only eligible tracked projec
 
 ## OpenTelemetry Demo import path
 
-The public scenarios remain authored synthetic fixtures until an actual Demo capture is imported and labeled. The project includes an offline OTLP/JSON trace adapter and a separate import guide. It records a source hash and requires an explicit Demo version and scenario name; it does not infer ground truth or insert imported telemetry into the public database. See [OpenTelemetry Demo import](otel-demo-import.md).
+The public scenarios remain authored synthetic fixtures until an actual Demo capture is imported and labeled. The project includes an offline OTLP/JSON trace adapter and a separate import guide. It records a source hash and requires an explicit Demo version and scenario name; it does not infer ground truth or insert imported telemetry into the public database. See [OpenTelemetry Demo import](otel-demo-import).
 
 ## Rollback and provenance
 

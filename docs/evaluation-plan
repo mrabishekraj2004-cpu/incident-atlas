@@ -9,7 +9,7 @@ The repository includes a deterministic rules evaluator and an offline labeled d
 
 ## Evaluation dataset
 
-The current rules regression set has 12 cases: three authored synthetic base cases, six derived synthetic variants, and three independent authored synthetic cases. The six derived variants and their labels live in `data/evaluation/variants.json`; they do not alter public runtime fixtures or model input. The independent queue-lag, CPU-throttling, and ambiguous shipping-span cases live in `data/evaluation/independent-cases-v1.json`. Eight cases have a positive expected label and four expect abstention. These are small regression cases, not a representative estimate of real incident accuracy. No case is an OpenTelemetry Demo import; the separate [import guide](otel-demo-import.md) documents an executable, currently unverified capture path.
+The current rules regression set has 12 cases: three authored synthetic base cases, six derived synthetic variants, and three independent authored synthetic cases. The six derived variants and their labels live in `data/evaluation/variants.json`; they do not alter public runtime fixtures or model input. The independent queue-lag, CPU-throttling, and ambiguous shipping-span cases live in `data/evaluation/independent-cases-v1.json`. Eight cases have a positive expected label and four expect abstention. These are small regression cases, not a representative estimate of real incident accuracy. No case is an OpenTelemetry Demo import; the separate [import guide](otel-demo-import) documents an executable, currently unverified capture path.
 
 ## Rules baseline
 

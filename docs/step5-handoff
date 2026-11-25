@@ -3,13 +3,13 @@
 **Status:** Full source is public on GitHub. PostgreSQL-backed CI, repeatable seeding, all backend tests, frontend checks, and the API container build pass. Production deployment, provider-backed live AI, and deployed browser walkthrough remain blocked and unverified.
 **Reviewed:** 2026-11-22
 
-This report records the original Step 5 handoff. The container startup and database-role procedure have since changed; see the current [deployment plan](deployment.md) and [pre-deployment release report](predeployment-release-report.md).
+This report records the original Step 5 handoff. The container startup and database-role procedure have since changed; see the current [deployment plan](deployment) and [pre-deployment release report](predeployment-release-report).
 
 ## Preflight findings
 
 Before Step 5 changes, the implementation had no Incident Atlas deployment, container, Compose configuration, or CI workflow. The workspace Git metadata directory was read-only. The nine PostgreSQL tests had not run because the runner blocks the embedded PostgreSQL socket. The UI client journey was mocked in tests but had never reached a real API/database from a browser. No server-side OpenAI key was configured. The synthetic fixtures were approved in ADR-002 but needed an explicit provenance statement for launch.
 
-The full inventory is in [`step5-preflight.md`](step5-preflight.md).
+The full inventory is in [`step5-preflight`](step5-preflight).
 
 ## Changes delivered
 

@@ -57,5 +57,5 @@ The rules evaluation is a small synthetic regression result, not a measure of re
 - Live AI remains disabled. A server-side model key, deployed proxy trust, global usage cap, and genuine provider run are still required before enabling it.
 - A deployed-site mobile walkthrough remains outstanding.
 - No CV or LinkedIn profile was changed from this deployment workflow. The live URL is available above for those portfolio entries.
-- No license was selected or added. See [licensing-decision.md](licensing-decision.md) for the owner decision.
+- No license was selected or added. See [licensing-decision](licensing-decision) for the owner decision.
 - Local CI screenshots remain labeled as local; no public-site screenshot is claimed in the case study.

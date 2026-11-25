@@ -29,14 +29,14 @@ FORBIDDEN_PARTS = {
     "build",
 }
 REQUIRED_PATHS = {
-    "README.md",
+    "README",
     "Dockerfile",
     "render.yaml",
     "netlify.toml",
     "api/pyproject.toml",
     "web/package.json",
-    "docs/deployment.md",
-    "docs/portfolio-case-study.md",
+    "docs/deployment",
+    "docs/portfolio-case-study",
     "docs/screenshots/01-dashboard-desktop.png",
     "docs/screenshots/02-incident-detail-desktop.png",
     "docs/screenshots/03-stored-replay-desktop.png",

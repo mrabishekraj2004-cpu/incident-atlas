@@ -4,7 +4,7 @@ React 19, Vite 8, TypeScript 7, and React Router power the incident investigatio
 
 ## Local API-backed run
 
-Start PostgreSQL, migrate and seed the API as described in [`api/README.md`](../api/README.md). Start FastAPI on `127.0.0.1:8000`, then run the frontend:
+Start PostgreSQL, migrate and seed the API as described in [`api/README`](../api/README). Start FastAPI on `127.0.0.1:8000`, then run the frontend:
 
 ```bash
 cd web

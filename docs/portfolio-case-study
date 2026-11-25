@@ -31,7 +31,7 @@ The incident evidence is authored deterministic synthetic data shaped like OpenT
 
 GitHub Actions run #3 measured 1.0000 labeled top-1, mean reciprocal rank, expected-support evidence recall, abstention accuracy, and overall decision accuracy on this fixed synthetic set. These figures are regression checks, not real-world incident accuracy. The earlier 0.5222 support-recall result is historical. A separate OTLP/JSON adapter has parser coverage, but no OpenTelemetry Demo capture has been imported or scored. No genuine live-model result has been verified; provider coverage is mocked.
 
-The application code is at commit [76392ba](https://github.com/mrabishekraj2004-cpu/incident-atlas/commit/76392ba2539781f3b49babb84b80aee94cec5043). GitHub Actions [PR #1 run #3](https://github.com/mrabishekraj2004-cpu/incident-atlas/actions/runs/45265136934) passed all five jobs: PostgreSQL-backed backend checks, 16 frontend tests and typecheck, API and static-demo builds, dependency audits, API container runtime checks, browser journey, and release archive validation. The browser job uses local CI services, not the public deployment. See the [deployment and release report](predeployment-release-report.md) for the exact deployment scope and open gates.
+The application code is at commit [76392ba](https://github.com/mrabishekraj2004-cpu/incident-atlas/commit/76392ba2539781f3b49babb84b80aee94cec5043). GitHub Actions [PR #1 run #3](https://github.com/mrabishekraj2004-cpu/incident-atlas/actions/runs/45265136934) passed all five jobs: PostgreSQL-backed backend checks, 16 frontend tests and typecheck, API and static-demo builds, dependency audits, API container runtime checks, browser journey, and release archive validation. The browser job uses local CI services, not the public deployment. See the [deployment and release report](predeployment-release-report) for the exact deployment scope and open gates.
 
 ## Browser screenshots
 
@@ -43,4 +43,4 @@ Screenshots are not included in this repository.
 - Live AI is disabled until a server-side model key, deployed proxy trust, global usage cap, and genuine provider request have been verified.
 - No public-site mobile visual check or real OpenTelemetry Demo evaluation has been completed.
 - No CV or LinkedIn profile entry was changed from this workflow. The public demo link at the top is ready to add.
-- No license file has been added; see the [owner decision note](licensing-decision.md).
+- No license file has been added; see the [owner decision note](licensing-decision).

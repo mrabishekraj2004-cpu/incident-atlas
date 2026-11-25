@@ -11,7 +11,7 @@ Deliver the repository foundation and backend contract first. Exact acceptance c
 
 1. Initialize the `incident-atlas` Git repository and public GitHub remote when available; add repository README, license decision, `.gitignore`, and contribution/setup notes. Keep secrets out of source.
 2. Establish API source tree, supported Python version, lockfile, FastAPI app, health route, structured logging, configuration validation, and OpenAPI schema.
-3. Define SQLAlchemy models and Alembic migrations for the entities in [data design](data-design.md); add database readiness checks and least-privilege connection configuration.
+3. Define SQLAlchemy models and Alembic migrations for the entities in [data design](data-design); add database readiness checks and least-privilege connection configuration.
 4. Implement deterministic, idempotent seed data for all three scenarios and evaluation labels in separate runtime/evaluation paths. Generate evidence IDs and stored replay responses with provenance.
 5. Implement bounded read APIs for capabilities, incident catalogue/detail, timeline, dependencies, telemetry, and replay. Enforce all row/time/body caps and explicit source labels.
 6. Implement investigation service: fixed read-only query pack, deterministic evidence snapshot and SHA-256, rules baseline, one structured AI inference when enabled, output validation, evidence-link validation, timeout/refusal/error recording, and safe persistence.
@@ -20,11 +20,11 @@ Deliver the repository foundation and backend contract first. Exact acceptance c
 
 ### Step 3 — Public website
 
-Build the routes and complete no-key journey in [product requirements](product-requirements.md). Add accessible timeline, service dependency view, linked telemetry, prominent live/replay labels, live-off fallback to replay, and explicit simulated-approval confirmation.
+Build the routes and complete no-key journey in [product requirements](product-requirements). Add accessible timeline, service dependency view, linked telemetry, prominent live/replay labels, live-off fallback to replay, and explicit simulated-approval confirmation.
 
 ### Step 4 — Evaluation and hardening
 
-Implement evaluation transforms and metrics in [evaluation plan](evaluation-plan.md), deterministic CI tests, boundary tests, browser journey, and accessibility checks. Run budgeted live evaluation manually or on an explicitly budgeted schedule.
+Implement evaluation transforms and metrics in [evaluation plan](evaluation-plan), deterministic CI tests, boundary tests, browser journey, and accessibility checks. Run budgeted live evaluation manually or on an explicitly budgeted schedule.
 
 ### Step 5 — Deployment and public launch
 
@@ -43,8 +43,8 @@ Step 2 is complete when all of the following are reviewable in the repository:
 
 ### Data and read APIs
 
-- All three scenario definitions in `incident-scenarios.md` are present, linked to stable timeline, metric, log, span, and dependency evidence, and use versioned synthetic timestamps and values.
-- The API contract routes in `api-design.md` exist with typed schemas, documented success/error shapes, UTC timestamps, bounded pagination/windows, and useful 404/422 behavior.
+- All three scenario definitions in `incident-scenarios` are present, linked to stable timeline, metric, log, span, and dependency evidence, and use versioned synthetic timestamps and values.
+- The API contract routes in `api-design` exist with typed schemas, documented success/error shapes, UTC timestamps, bounded pagination/windows, and useful 404/422 behavior.
 - Fixture labels are kept separate from runtime analysis context. A test or equivalent automated check proves ground-truth labels are never serialized to the public API or model packet.
 - Stored replay is returned without a model call, carries `source=stored_replay`, `model_call_made=false`, replay timestamp and fixture version, and all evidence links resolve.
 

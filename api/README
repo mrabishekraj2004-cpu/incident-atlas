@@ -43,7 +43,7 @@ uv run python -m incident_atlas.cli evaluate-fixtures
 uv run python -m incident_atlas.cli evaluate-expanded
 ```
 
-These are regression checks on authored synthetic data, not real-world incident accuracy. Current coverage is three base cases, six derived variants, and three independent authored cases; no imported OpenTelemetry Demo capture has been scored. Do not run `seed-evaluation` against a production database. The offline [OTLP/JSON adapter](incident_atlas/otel_demo_import.py) can be run from this package via `python -m incident_atlas.otel_demo_import` after following the [import guide](../docs/otel-demo-import.md).
+These are regression checks on authored synthetic data, not real-world incident accuracy. Current coverage is three base cases, six derived variants, and three independent authored cases; no imported OpenTelemetry Demo capture has been scored. Do not run `seed-evaluation` against a production database. The offline [OTLP/JSON adapter](incident_atlas/otel_demo_import.py) can be run from this package via `python -m incident_atlas.otel_demo_import` after following the [import guide](../docs/otel-demo-import).
 
 ## Tests and checks
 
@@ -57,4 +57,4 @@ uv audit --locked
 
 Set `TEST_DATABASE_URL` to use an external disposable PostgreSQL instance. Without it, the suite attempts to start embedded PostgreSQL; constrained sandboxes may block its socket. Skipped database tests are not a PostgreSQL verification. CI uses an actual PostgreSQL service and also builds **and runs** the production API image against production-shaped URL/role settings.
 
-See [deployment instructions](../docs/deployment.md), [Step 6 report](../docs/step6-report.md), and the current [pre-deployment release report](../docs/predeployment-release-report.md) for deployment requirements and verified commit details.
+See [deployment instructions](../docs/deployment), [Step 6 report](../docs/step6-report), and the current [pre-deployment release report](../docs/predeployment-release-report) for deployment requirements and verified commit details.
