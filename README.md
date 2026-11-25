@@ -1,80 +1,248 @@
+ M README.md
+Numbered sections: 18 (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18)
+Missing local links: none
+README bytes: 13993
 # Incident Atlas
 
-Incident Atlas is a no-sign-in incident investigation demo. Visitors can inspect service dependencies and synthetic telemetry, open a stored investigation replay, follow its evidence references, and record a simulated mitigation approval. Approval changes no external system. Stored replays do not call a model and do not require an API key.
+## 1. Project title and description
 
-**Public demo:** [incident-atlas-demo.vercel.app](https://incident-atlas-demo.vercel.app/). This is a static frontend-only showcase using bundled synthetic fixtures. It does not connect to FastAPI or PostgreSQL. Simulated approvals are saved in the current browser only; live AI and backend persistence are unavailable.
+Incident Atlas is an incident investigation demo for exploring synthetic service incidents. It brings timelines, service dependencies, metrics, logs, traces, saved investigation replays, and evidence references into one reviewable workflow. A visitor can record a simulated mitigation approval; the demo never changes an external system.
 
-**GitHub source:** [mrabishekraj2004-cpu/incident-atlas](https://github.com/mrabishekraj2004-cpu/incident-atlas). The static-demo/Vercel setup on main commit [76392ba](https://github.com/mrabishekraj2004-cpu/incident-atlas/commit/76392ba2539781f3b49babb84b80aee94cec5043) passed [GitHub Actions PR run #3](https://github.com/mrabishekraj2004-cpu/incident-atlas/actions/runs/45265136934) before merge. The public URL above was opened and the static replay and browser-local approval flow were verified in production.
+## 2. Live deployment link
 
-## Case study and source
+[Open the Incident Atlas demo](https://incident-atlas-demo.vercel.app/)
 
-- [Portfolio case study and application screenshots](docs/portfolio-case-study.md)
-- [GitHub source repository](https://github.com/mrabishekraj2004-cpu/incident-atlas)
-- [Pre-deployment release report](docs/predeployment-release-report.md)
-- [Step 6 security and evaluation report](docs/step6-report.md)
-- [License decision](docs/licensing-decision.md) — no license has been selected or added.
+The public site is a static frontend using bundled synthetic fixtures. It does not connect to the FastAPI service or PostgreSQL. Approvals are stored in the current browser; live analysis and server persistence are unavailable.
 
-## Data provenance and evaluation limits
+## 3. Demo video link
 
-The three incident scenarios and their stored replays are project-authored, deterministic synthetic data shaped like OpenTelemetry records. They are not imported from the OpenTelemetry Demo and are not real production incidents. The separate answer key is absent from the public frontend bundle, public API image, and live model input.
+Walkthrough video: **not published yet**.
 
-The rules baseline uses three authored base cases, six derived variants, and three independent authored synthetic cases, including expected-abstention cases. Those results describe this small synthetic regression set only; they are not real-world incident accuracy. A separate OpenTelemetry Demo importer is available, but no Demo capture has been imported. Provider coverage is mocked unless a report explicitly records a genuine live model request. No genuine provider run has been verified for the current release.
+## 4. Screenshots
 
-## Run locally
+These screenshots come from the local CI app with synthetic data. They show application flows and do not represent screenshots captured from the public deployment.
 
-With Docker Engine and Compose:
+![Desktop incident dashboard](docs/screenshots/01-dashboard-desktop.png)
+
+![Incident detail with timeline, dependencies, and telemetry](docs/screenshots/02-incident-detail-desktop.png)
+
+![Stored investigation replay with evidence references](docs/screenshots/03-stored-replay-desktop.png)
+
+![Simulated mitigation approval](docs/screenshots/04-simulated-approval-desktop.png)
+
+![Mobile incident dashboard](docs/screenshots/05-dashboard-mobile.png)
+
+## 5. Project overview and objectives
+
+Incident response often means piecing together a timeline from service maps, metrics, logs, traces, and deployment events. Incident Atlas demonstrates how those signals can be gathered around a single incident and presented with traceable evidence.
+
+Project objectives:
+
+- Make a synthetic incident journey easy to inspect without an account or provider key.
+- Keep saved reports and their evidence references reviewable.
+- Label hypotheses and uncertainty clearly instead of presenting a cause as fact.
+- Keep approvals simulation-only, with no remediation executor or external side effects.
+
+All incident data is authored synthetic data shaped like OpenTelemetry records. It is not customer telemetry or a set of real production incidents.
+
+## 6. Key features
+
+- Browse synthetic incidents and inspect each incident's timeline and service dependencies.
+- Explore metrics, logs, and traces for the selected incident.
+- Open a stored replay that works without a model call or API key.
+- Follow report citations to the evidence items they reference.
+- Record a simulated mitigation approval; in the public static demo, it stays in the current browser.
+- Use an API-backed FastAPI/PostgreSQL mode locally. Its optional live-analysis route is disabled by default.
+- View account and settings screens as frontend previews; they do not provide real authentication or server-side profiles.
+
+## 7. Technology stack
+
+| Area | Technology |
+|---|---|
+| Frontend | React 19, TypeScript 7, Vite 8, React Router |
+| Backend | Python 3.12, FastAPI, Pydantic, SQLAlchemy, Alembic |
+| Database | PostgreSQL 17 in the local Compose setup |
+| Testing | Node test runner, pytest, Playwright, TypeScript checks |
+| Hosting | Vercel for the public static frontend; FastAPI and PostgreSQL are not publicly deployed |
+| CI | GitHub Actions |
+
+## 8. System architecture
+
+The public deployment serves a static frontend and bundled fixtures. The repository also supports an API-backed local setup for development.
+
+```mermaid
+flowchart TD
+  Visitor["Visitor browser"] --> Vercel["Vercel static React app"]
+  Fixtures["Bundled synthetic incidents and replays"] --> Vercel
+  Vercel --> BrowserStore["Browser storage for demo preferences and approvals"]
+
+  subgraph LocalAPI["Optional API-backed local setup"]
+    Web["React app in API mode"] -->|"JSON /api/v1"| API["FastAPI"]
+    API --> DB[("PostgreSQL")]
+    API -. "live analysis disabled by default" .-> Model["Model provider"]
+  end
+```
+
+The public Vercel build uses the static-demo mode and does not make API requests. The local API path serves synthetic fixtures, saved replays, and optional investigation endpoints. If enabled in a separately configured environment, the live-analysis path is server-side and bounded by evidence and request limits.
+
+## 9. Software design diagrams
+
+- **Investigation sequence diagram:** [Architecture and workflow](docs/architecture.md#investigation-workflow)
+- **Database entity relationship diagram:** [Data design](docs/data-design.md#relationships)
+- **Infrastructure and component diagram:** the current public/local split is shown in [System architecture](#8-system-architecture). The deployment runbook describes the separate, optional API-hosting design in [docs/deployment.md](docs/deployment.md).
+
+## 10. Folder structure
+
+```text
+.
+├── api/
+│   ├── incident_atlas/       # FastAPI routes, services, schemas, and data access
+│   ├── migrations/           # Alembic database migrations
+│   └── tests/                # Backend tests
+├── data/
+│   ├── incidents/            # Public synthetic incident fixtures and replays
+│   └── evaluation/           # Separate local/CI evaluation data
+├── docs/
+│   └── screenshots/          # Local CI screenshots
+├── web/
+│   ├── src/                  # React application and API/data clients
+│   └── tests/                # Frontend and browser smoke checks
+├── scripts/                  # Release and deployment utilities
+├── .github/workflows/        # CI workflow
+├── compose.yaml              # Local PostgreSQL, API, and web services
+└── Dockerfile                 # API container image
+```
+
+## 11. Installation and setup
+
+For the full local stack, install Docker Engine with the Compose plugin, then run this from the repository root:
 
 ```bash
 docker compose up --build
 ```
 
-Open `http://localhost:5173`. Compose starts PostgreSQL, applies migrations and seeds runtime fixtures in a one-shot bootstrap service, then starts the API and web app. The no-key replay journey works with live AI disabled.
+Open the web app at [http://localhost:5173](http://localhost:5173). The API is at [http://localhost:8000](http://localhost:8000), with interactive docs at [http://localhost:8000/docs](http://localhost:8000/docs). Compose starts PostgreSQL, applies migrations, and seeds runtime fixtures. Stored replays and simulated approvals work with live analysis disabled.
 
-To opt into the development fixture preview, copy `web/.env.development.fixture.example` to `web/.env.development.local`. The UI labels this mode **DEV FIXTURE PREVIEW**; it is never selected after an API failure. For the deliberate frontend-only showcase, use the separate `VITE_DATA_MODE=static-demo` build mode described below.
+To build the frontend-only demo locally:
 
-For manual setup, see [API setup](api/README.md) and [web setup](web/README.md). Local checks:
+```bash
+cd web
+npm ci
+VITE_DATA_MODE=static-demo npm run build
+```
+
+For manual API setup and development commands, see [api/README.md](api/README.md) and [web/README.md](web/README.md).
+
+## 12. Environment variables
+
+The checked-in example files document configuration without containing production credentials:
+[frontend](web/.env.example), [Vercel static demo](web/.env.vercel.example), and [API](api/.env.example).
+
+| Variable | Used by | Purpose |
+|---|---|---|
+| `VITE_DATA_MODE` | Frontend build | Use `static-demo` for the public static site or `api` for an API-backed build. |
+| `VITE_API_BASE_URL` | Frontend build | API origin ending in `/api/v1` when using API mode. Leave unset for the static demo. |
+| `DATABASE_URL` | API | PostgreSQL connection for the API runtime. |
+| `MIGRATION_DATABASE_URL` | Deployment/bootstrap | Separate database credential used for migrations and seeding. |
+| `RUNTIME_DB_PASSWORD` | Deployment/bootstrap | Password used to verify the restricted runtime database role. |
+| `PUBLIC_SITE_ORIGIN`, `CORS_ALLOWED_ORIGINS` | API | Exact HTTPS site origin and matching CORS allowlist. |
+| `TRUSTED_PROXY_CIDRS` | API | Verified ingress proxy ranges for forwarded client addresses. |
+| `RATE_LIMIT_HMAC_KEY` | API | Secret used for privacy-preserving rate-limit identifiers. |
+| `LIVE_ANALYSIS_ENABLED` | API | Defaults to `false`; live analysis remains disabled until deployment checks are complete. |
+| `OPENAI_API_KEY`, `OPENAI_MODEL` | API | Optional server-side provider configuration; not needed for the public demo or stored replays. |
+
+Never put `OPENAI_API_KEY`, database credentials, or other server secrets in a `VITE_` variable. Frontend `VITE_` values are included in the browser bundle.
+
+## 13. API documentation
+
+The API base path is `/api/v1`. Full request and response contracts are in [docs/api-design.md](docs/api-design.md); a running local API also exposes [OpenAPI JSON](http://localhost:8000/openapi.json) and [Swagger UI](http://localhost:8000/docs).
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `GET` | `/healthz`, `/readyz` | Liveness and database readiness |
+| `GET` | `/api/v1/demo-capabilities` | Report which demo paths are enabled |
+| `GET` | `/api/v1/incidents` | List incidents; supports severity/service filters and pagination |
+| `GET` | `/api/v1/incidents/{incident_id}` | Read incident details |
+| `GET` | `/api/v1/incidents/{incident_id}/timeline` | Read bounded timeline events |
+| `GET` | `/api/v1/incidents/{incident_id}/dependencies` | Read the incident service graph |
+| `GET` | `/api/v1/incidents/{incident_id}/telemetry` | Read metrics, logs, or traces |
+| `GET` | `/api/v1/incidents/{incident_id}/replay`, `/api/v1/replays/{replay_id}` | Read a stored report without a model call |
+| `POST` | `/api/v1/investigations` | Request a bounded live investigation; disabled by default |
+| `GET` | `/api/v1/investigations/{investigation_id}` | Read a saved live investigation |
+| `POST` | `/api/v1/investigations/{investigation_id}/mitigation-approvals`, `/api/v1/replays/{replay_id}/mitigation-approvals` | Record a simulation-only approval |
+| `GET` | `/api/v1/investigations/{investigation_id}/mitigation-approvals/{mitigation_id}`, `/api/v1/replays/{replay_id}/mitigation-approvals/{mitigation_id}` | Restore a saved approval for the current anonymous visitor |
+| `GET` | `/api/v1/snapshots/{snapshot_id}`, `/api/v1/snapshots/{snapshot_id}/evidence/{evidence_id}` | Read snapshot metadata and resolve cited evidence |
+
+Example local requests:
+
+```bash
+curl http://localhost:8000/api/v1/incidents
+curl http://localhost:8000/api/v1/incidents/inc-cache-collapse-001/replay
+curl http://localhost:8000/api/v1/replays/replay-cache-v1
+```
+
+To record a simulation, use the `hypothesis_id` and `mitigation_id` from a replay response:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/replays/replay-cache-v1/mitigation-approvals \
+  -H 'Content-Type: application/json' \
+  -d '{"hypothesis_id":"<hypothesis-id>","mitigation_id":"<mitigation-id>","simulation_acknowledged":true}'
+```
+
+## 14. Testing
+
+The CI workflow in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) covers PostgreSQL migrations and backend integration tests, Python lint and dependency auditing, frontend tests/typechecking/build and dependency auditing, API container startup, and desktop/mobile browser flows. The static-demo/Vercel change passed [GitHub Actions PR run #3](https://github.com/mrabishekraj2004-cpu/incident-atlas/actions/runs/45265136934) before it was merged; see [Actions](https://github.com/mrabishekraj2004-cpu/incident-atlas/actions) for the current branch status.
+
+Run the main checks locally:
 
 ```bash
 cd api
-uv sync --locked --extra dev --extra observability
 uv run pytest -q -rs
 uv run ruff check .
 uv audit --locked
 
 cd ../web
-npm ci
 npm test
 npm run typecheck
-# Frontend-only portfolio build; bundled synthetic fixtures, no API URL.
 VITE_DATA_MODE=static-demo npm run build
-# Set INCIDENT_ATLAS_API_ORIGIN to a real public HTTPS API origin first.
-VITE_API_BASE_URL="${INCIDENT_ATLAS_API_ORIGIN%/}/api/v1" npm run build
 npm audit --audit-level=moderate
 ```
 
-API mode requires an absolute HTTPS API URL ending in `/api/v1`. It rejects reserved example, test, loopback, private, and documentation-only hosts outside the explicit CI placeholder path. The static portfolio mode instead uses bundled synthetic fixture data and requires `VITE_API_BASE_URL` to be unset. Its stored reports never call a model, simulated approvals stay in the current browser, and live AI and backend persistence are unavailable. In a Git checkout, `python scripts/build_release_zip.py --output /tmp/incident-atlas-release.zip` creates and inspects a ZIP from tracked project files while excluding generated output, environments, secrets, caches, and Git metadata.
+The scenarios and evaluation cases are synthetic regression data; their results do not measure accuracy on real production incidents. No genuine live provider result is part of the public demo.
 
-## Deployment configuration
+## 15. Deployment instructions
 
-### Frontend-only Vercel showcase
+The public frontend is deployed on Vercel from the `web/` root directory:
 
-The public site at [incident-atlas-demo.vercel.app](https://incident-atlas-demo.vercel.app/) serves the React frontend from the `web/` directory. It uses the Vite preset, `npm ci`, `npm run build`, and `dist`, with `VITE_DATA_MODE=static-demo` and no API URL. The checked-in Vercel rewrite supports direct refreshes on React Router paths. The exact setup is in [`web/README.md`](web/README.md).
+1. Set the Vercel Root Directory to `web` and framework preset to **Vite**.
+2. Use `npm ci` as the install command, `npm run build` as the build command, and `dist` as the output directory.
+3. Set `VITE_DATA_MODE=static-demo` for Production and Preview. Leave `VITE_API_BASE_URL` unset.
+4. Enable **Include source files outside of the Root Directory in the Build Step**, because the frontend imports synthetic fixtures from `data/incidents/`.
+5. Keep the checked-in Vercel rewrite so direct navigation and refreshes work on app routes.
 
-This static build serves bundled synthetic scenarios and stored replay reports. It does not deploy or call FastAPI or PostgreSQL. Approvals are browser-local; live AI and backend persistence are unavailable. Production was opened in a browser on 23 November 2026; the catalog incident’s six evidence references and browser-local approval survived refresh. No mobile-width visual walkthrough has been completed in the deployed site.
+The deployed site is [incident-atlas-demo.vercel.app](https://incident-atlas-demo.vercel.app/). The FastAPI service and PostgreSQL database are not deployed. [docs/deployment.md](docs/deployment.md) contains the separate backend hosting plan; its backend steps are not part of the current public deployment.
 
-### Optional backend integration
+## 16. Challenges and solutions
 
-The older API deployment plan uses Render for FastAPI plus PostgreSQL. Its pre-deploy command migrates and seeds with a pinned `MIGRATION_DATABASE_URL`; the API runs with the separate `incident_atlas_runtime` role. Production requires `PUBLIC_SITE_ORIGIN` and `CORS_ALLOWED_ORIGINS` to match the exact frontend HTTPS origin. The runtime role cannot mutate seeded reference data, stored replays, or immutable evidence, and cannot access evaluation data or run migrations. Public model calls have a PostgreSQL-backed global cap; `LIVE_ANALYSIS_ENABLED` remains false in the checked-in deployment template.
+| Challenge | Engineering decision |
+|---|---|
+| Present several signal types without losing incident context | Group timelines, dependencies, metrics, logs, and traces around a stable incident ID and bounded time window. |
+| Make saved reports inspectable | Preserve evidence references and expose snapshot/evidence lookup routes in the API-backed design. |
+| Avoid implying that a replay is fresh analysis | Label stored reports as replays and keep them independent from provider calls. |
+| Demonstrate an approval step without affecting operations | Store explicit simulation-only approvals; provide no external remediation executor. |
+| Keep a dependable public demo when backend hosting is absent | Ship a static Vercel build with bundled synthetic fixtures and browser-local approvals. |
 
-The FastAPI service and database remain undeployed. No billable backend resources were created, no model key was configured, and live AI remains disabled. The [staged backend deployment runbook](docs/deployment.md) records the separate migration/runtime credentials and managed-database checks needed before that path can be enabled. See the current [release report](docs/predeployment-release-report.md) for verified outcomes.
+## 17. Future improvements
 
-## Project blueprint
+- Publish a short walkthrough video and add its link here.
+- Complete a mobile walkthrough of the live Vercel site and capture deployment screenshots.
+- If a hosting budget and account are available, deploy the API and database and connect them to the frontend.
+- Replace account/settings preview screens with real authentication and server-side persistence if the product needs user accounts.
+- Verify a genuine live provider request and its production limits before enabling live analysis.
+- Select and add a project license.
 
-- [Product requirements and visitor journey](docs/product-requirements.md)
-- [Architecture and workflows](docs/architecture.md)
-- [API contracts](docs/api-design.md)
-- [PostgreSQL data design](docs/data-design.md)
-- [Synthetic incident scenarios](docs/incident-scenarios.md)
-- [Evaluation plan](docs/evaluation-plan.md)
-- [Architecture decisions](docs/decisions.md)
-- [Implementation backlog](docs/implementation-backlog.md)
+## 18. Author and license
+
+- **Author:** [@mrabishekraj2004-cpu](https://github.com/mrabishekraj2004-cpu)
+- **Repository:** [mrabishekraj2004-cpu/incident-atlas](https://github.com/mrabishekraj2004-cpu/incident-atlas)
+- **License:** No license has been selected or added. See [docs/licensing-decision.md](docs/licensing-decision.md).
