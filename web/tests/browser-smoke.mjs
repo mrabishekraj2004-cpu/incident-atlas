@@ -21,7 +21,7 @@ try {
   page.on('pageerror', error => pageErrors.push(error.message))
 
   await page.goto(baseUrl)
-  await page.getByRole('heading', { name: /Follow the evidence/ }).waitFor()
+  await page.getByRole('heading', { name: /Follow the incident/ }).waitFor()
   await capture(page, '01-dashboard-desktop.png')
   await page.getByRole('link', { name: /Explore incidents/ }).click()
   await page.getByRole('heading', { name: 'Choose an incident' }).waitFor()
@@ -62,11 +62,43 @@ const mobilePage = await mobileContext.newPage()
 const mobilePageErrors = []
 mobilePage.on('pageerror', error => mobilePageErrors.push(error.message))
 const assertMobileFits = async () => {
-  const overflow = await mobilePage.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
-  assert.equal(overflow, 0, 'mobile page should not overflow horizontally')
+  const diagnostics = await mobilePage.evaluate(() => {
+    const viewport = document.documentElement.clientWidth
+    const overflowing = [...document.querySelectorAll('body *')]
+      .map(element => {
+        const rect = element.getBoundingClientRect()
+        return {
+          element: `${element.tagName.toLowerCase()}${element.id ? `#${element.id}` : ''}${typeof element.className === 'string' && element.className ? `.${element.className.trim().replace(/\s+/g, '.')}` : ''}`,
+          right: Math.round(rect.right),
+          width: Math.round(rect.width),
+          ancestors: (() => {
+            const result = []
+            let parent = element.parentElement
+            while (parent && result.length < 5) {
+              const parentRect = parent.getBoundingClientRect()
+              result.push({
+                element: `${parent.tagName.toLowerCase()}${parent.id ? `#${parent.id}` : ''}${typeof parent.className === 'string' && parent.className ? `.${parent.className.trim().replace(/\s+/g, '.')}` : ''}`,
+                left: Math.round(parentRect.left),
+                right: Math.round(parentRect.right),
+                width: Math.round(parentRect.width),
+                scrollWidth: parent.scrollWidth,
+                clientWidth: parent.clientWidth,
+                display: getComputedStyle(parent).display,
+              })
+              parent = parent.parentElement
+            }
+            return result
+          })(),
+        }
+      })
+      .filter(element => element.right > viewport + 1)
+      .slice(0, 12)
+    return { overflow: document.documentElement.scrollWidth - viewport, viewport, overflowing }
+  })
+  assert.equal(diagnostics.overflow, 0, `mobile page should not overflow horizontally: ${JSON.stringify(diagnostics)}`)
 }
   await mobilePage.goto(baseUrl)
-  await mobilePage.getByRole('heading', { name: /Follow the evidence/ }).waitFor()
+  await mobilePage.getByRole('heading', { name: /Follow the incident/ }).waitFor()
   await capture(mobilePage, '05-dashboard-mobile.png')
 await assertMobileFits()
   await mobilePage.getByRole('link', { name: /Explore incidents/ }).focus()
