@@ -199,6 +199,11 @@ def _consume_rate_event(
     now: datetime,
 ) -> None:
     subject_hash = hashlib.sha256(subject.encode()).hexdigest()
+    # Serialize the check-and-insert pair per subject/action. The transaction
+    # lock is released by the commit below, so a concurrent request sees the
+    # event inserted by the previous request before checking the limit.
+    lock_key = f"pilot-rate:{action}:{subject_hash}"
+    db.execute(select(func.pg_advisory_xact_lock(func.hashtextextended(lock_key, 0))))
     count = (
         db.scalar(
             select(func.count())
@@ -912,6 +917,8 @@ def _require_json_body(raw: bytes, signal: str) -> Any:
 
 def _proto_value(value: Any) -> Any:
     variant = value.WhichOneof("value")
+    if variant == "string_value":
+        return _clean_text(value.string_value)
     if variant == "kvlist_value":
         return _proto_attributes(value.kvlist_value.values)
     if variant == "array_value":
@@ -1007,7 +1014,14 @@ def _normalise_otlp(message: Any, signal: str) -> list[dict[str, Any]]:
                         if not observed:
                             continue
                         if family in {"gauge", "sum"}:
-                            value = float(getattr(point, point.WhichOneof("value")))
+                            value_kind = point.WhichOneof("value")
+                            if value_kind not in {"as_double", "as_int"}:
+                                raise _problem(
+                                    422,
+                                    "invalid_metric_point",
+                                    "A gauge or sum point must contain a numeric value.",
+                                )
+                            value = float(getattr(point, value_kind))
                         elif family in {"histogram", "exponential_histogram"}:
                             value = float(point.sum / point.count) if point.count else 0.0
                         elif family == "summary":

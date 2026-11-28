@@ -10,6 +10,12 @@
 
 These are initial pilot targets to review after staging traffic and participant workload are known. No availability, ingestion-lag, or investigation-latency result has been measured against a deployed pilot. Sample-service latency from a rehearsal is not a service-level result.
 
+## Retention enforcement
+
+The API hides expired evidence, snapshots, and reports as soon as their expiry passes. The pilot Blueprint also defines a daily 03:17 UTC Render cron job that runs `uv run --no-sync python -m incident_atlas.pilot_cli prune`; it deletes expired evidence, snapshots, reports, batch metadata older than `PILOT_RETENTION_DAYS`, expired ingestion-token hashes, and audit rows older than 365 days. Keep `PILOT_RETENTION_DAYS` in the cron service aligned with the API setting. The job uses the restricted runtime URL for production configuration validation and the owner migration URL for the cleanup transaction. Store both as service secrets; the CLI prints deletion counts only.
+
+The cron service is configured but not deployed. Render cron jobs have a $1/month minimum charge, so applying this part of the Blueprint requires owner approval for that added cost. If the hosted scheduler is not approved, run the same command daily from an authorized operator environment with the API and migration database URLs configured. Expired rows remain hidden from API reads while awaiting cleanup.
+
 ## PostgreSQL operator queries
 
 Run read-only queries using an authorized reporting role. They use the default 30-day evidence retention and do not expose payload text.

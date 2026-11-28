@@ -339,6 +339,73 @@ def test_expired_evidence_reports_and_snapshot_citations_are_hidden(
     )
     assert pg_client.get(citation_url, headers=_headers("pilot.payments.viewer")).status_code == 404
 
+
+def test_prune_uses_configured_retention_and_removes_expired_tokens(
+    pg_client: TestClient,
+) -> None:
+    from incident_atlas.db import SessionLocal
+    from incident_atlas.models import (
+        PilotEvidence,
+        PilotIncident,
+        PilotIngestBatch,
+        PilotIngestToken,
+    )
+    from incident_atlas.pilot_cli import prune
+
+    _seed_pilot()
+    now = datetime.now(UTC)
+    with SessionLocal() as db:
+        incident = db.scalar(
+            select(PilotIncident).where(PilotIncident.workspace_id == "payments-team")
+        )
+        assert incident is not None
+        db.add(
+            PilotIngestBatch(
+                id="expired-batch",
+                workspace_id="payments-team",
+                incident_id=incident.id,
+                signal="metrics",
+                idempotency_key="expired-batch-key",
+                payload_sha256="a" * 64,
+                accepted_count=0,
+                duplicate_count=0,
+                rejected_count=0,
+                created_at=now - timedelta(days=8),
+            )
+        )
+        db.add(
+            PilotIngestToken(
+                id="expired-token",
+                workspace_id="payments-team",
+                service_id="checkout-service",
+                token_hash="b" * 64,
+                created_at=now - timedelta(days=10),
+                expires_at=now - timedelta(seconds=1),
+            )
+        )
+        db.add(
+            PilotEvidence(
+                id="expired-prune-evidence",
+                workspace_id="payments-team",
+                incident_id=incident.id,
+                service_id="checkout-service",
+                kind="log",
+                source="otel",
+                source_record_id="expired-prune-evidence",
+                occurred_at=now - timedelta(days=8),
+                payload={"message": "Synthetic expired row"},
+                created_at=now - timedelta(days=8),
+                expires_at=now - timedelta(seconds=1),
+            )
+        )
+        db.commit()
+
+        counts = prune(db, retention_days=7)
+
+    assert counts["ingest_batches"] == 1
+    assert counts["ingest_tokens"] == 1
+    assert counts["evidence"] == 1
+
 def test_otlp_ingestion_is_bounded_retry_safe_partial_and_reports_late_data(
     pg_client: TestClient,
 ) -> None:
@@ -418,6 +485,83 @@ def test_otlp_ingestion_is_bounded_retry_safe_partial_and_reports_late_data(
         headers={"Authorization": f"Bearer {token}", "X-Atlas-Incident-Id": incident_id},
     )
     assert oversized.status_code == 413
+
+
+def test_malformed_numeric_metric_point_returns_validation_error(pg_client: TestClient) -> None:
+    from incident_atlas.db import SessionLocal
+    from incident_atlas.models import PilotEvidence, PilotIncident
+    from incident_atlas.pilot_cli import issue_token
+
+    _seed_pilot()
+    with SessionLocal() as db:
+        incident = db.scalar(
+            select(PilotIncident).where(PilotIncident.workspace_id == "payments-team")
+        )
+        assert incident is not None
+        incident_id = incident.id
+        token, _ = issue_token(db, "payments-team", "checkout-service")
+
+    malformed = _metrics_request(
+        service_name="checkout-service", timestamp=datetime.now(UTC), value=12
+    )
+    point = malformed.resource_metrics[0].scope_metrics[0].metrics[0].gauge.data_points[0]
+    point.ClearField("as_double")
+    response = pg_client.post(
+        "/api/v1/pilot/ingest/otel/v1/metrics",
+        content=malformed.SerializeToString(),
+        headers={
+            "Authorization": f"Bearer {token}",
+            "X-Atlas-Incident-Id": incident_id,
+        },
+    )
+
+    assert response.status_code == 422
+    assert response.json()["code"] == "invalid_metric_point"
+    with SessionLocal() as db:
+        assert (
+            db.scalar(
+                select(PilotEvidence.id).where(
+                    PilotEvidence.workspace_id == "payments-team",
+                    PilotEvidence.source == "otel",
+                )
+            )
+            is None
+        )
+
+
+def test_ingestion_rate_limit_is_atomic_for_concurrent_requests(pg_client: TestClient) -> None:
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Barrier
+
+    from incident_atlas.db import SessionLocal
+    from incident_atlas.errors import ApiError
+    from incident_atlas.pilot import _consume_rate_event
+
+    workers = 8
+    limit = 3
+    barrier = Barrier(workers)
+
+    def consume(_index: int) -> str:
+        with SessionLocal() as db:
+            barrier.wait(timeout=10)
+            try:
+                _consume_rate_event(
+                    db,
+                    "concurrent-test-ingest-token",
+                    "pilot_ingest",
+                    limit,
+                    datetime.now(UTC),
+                )
+            except ApiError:
+                db.rollback()
+                return "limited"
+            return "accepted"
+
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        outcomes = list(executor.map(consume, range(workers)))
+
+    assert outcomes.count("accepted") == limit
+    assert outcomes.count("limited") == workers - limit
 
 
 def test_github_webhook_signature_delivery_dedup_and_workspace_scope(pg_client: TestClient) -> None:

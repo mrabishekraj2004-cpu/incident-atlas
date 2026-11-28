@@ -60,6 +60,43 @@ services:
       - key: LOG_LEVEL
         value: INFO
 
+  # Daily deletion of rows after their configured retention period. This is a
+  # separate paid Render service; do not apply without the spending approval.
+  - type: cron
+    name: incident-atlas-pilot-retention
+    runtime: docker
+    plan: starter
+    region: oregon
+    dockerContext: .
+    dockerfilePath: ./Dockerfile
+    dockerCommand: uv run --no-sync python -m incident_atlas.pilot_cli prune
+    schedule: "17 3 * * *"
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: PILOT_ENABLED
+        value: "false"
+      - key: PILOT_DEV_AUTH_ENABLED
+        value: "false"
+      - key: PILOT_RETENTION_DAYS
+        value: "30"
+      - key: DATABASE_URL
+        sync: false
+      - key: MIGRATION_DATABASE_URL
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://incident-atlas-demo.vercel.app
+      - key: PUBLIC_SITE_ORIGIN
+        value: https://incident-atlas-demo.vercel.app
+      - key: RATE_LIMIT_HMAC_KEY
+        generateValue: true
+      - key: LIVE_ANALYSIS_ENABLED
+        value: "false"
+      - key: LIVE_PROVIDER_VERIFIED
+        value: "false"
+      - key: LOG_LEVEL
+        value: INFO
+
 databases:
   - name: incident-atlas-pilot-db
     databaseName: incident_atlas_pilot

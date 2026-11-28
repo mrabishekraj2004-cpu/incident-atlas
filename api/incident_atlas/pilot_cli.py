@@ -275,7 +275,7 @@ def reset_incident(session: Session, workspace_id: str, incident_key: str) -> No
     session.commit()
 
 
-def prune(session: Session) -> dict[str, int]:
+def prune(session: Session, *, retention_days: int = 30) -> dict[str, int]:
     now = datetime.now(UTC)
     counts = {}
     # Reports are removed before snapshots due to their restrictive snapshot FK.
@@ -288,7 +288,7 @@ def prune(session: Session) -> dict[str, int]:
         result = session.execute(
             delete(model).where(model.expires_at < now)
             if hasattr(model, "expires_at")
-            else delete(model).where(model.created_at < now - timedelta(days=30))
+            else delete(model).where(model.created_at < now - timedelta(days=retention_days))
         )
         counts[name] = result.rowcount or 0
     counts["audit_events"] = (
@@ -298,9 +298,7 @@ def prune(session: Session) -> dict[str, int]:
         or 0
     )
     counts["ingest_tokens"] = (
-        session.execute(
-            delete(PilotIngestToken).where(PilotIngestToken.expires_at < now - timedelta(days=365))
-        ).rowcount
+        session.execute(delete(PilotIngestToken).where(PilotIngestToken.expires_at < now)).rowcount
         or 0
     )
     session.commit()
@@ -437,7 +435,12 @@ def main() -> None:
             elif args.command == "bootstrap-local-env":
                 write_local_env(session, Path(args.output), args.force)
             elif args.command == "prune":
-                print(json.dumps(prune(session), sort_keys=True))
+                print(
+                    json.dumps(
+                        prune(session, retention_days=get_settings().pilot_retention_days),
+                        sort_keys=True,
+                    )
+                )
     finally:
         engine.dispose()
 
