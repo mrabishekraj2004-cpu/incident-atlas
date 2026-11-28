@@ -738,6 +738,9 @@ def create_workspace_investigation(
         expires_at=now + timedelta(days=settings.pilot_retention_days),
     )
     db.add(snapshot)
+    # The snapshot must exist before its evidence rows because PostgreSQL
+    # enforces the composite workspace foreign key immediately.
+    db.flush()
     for item in items:
         db.add(
             PilotSnapshotEvidence(
@@ -751,6 +754,7 @@ def create_workspace_investigation(
                 payload=item["payload"],
             )
         )
+    db.flush()
     report_payload = _rules_report(incident, items, snapshot_id, snapshot_sha)
     report_payload["created_at"] = _iso(now)
     report_payload["analysis_duration_ms"] = round((perf_counter() - started) * 1000, 3)
@@ -1169,6 +1173,20 @@ async def ingest_otel(
             select(PilotService).where(PilotService.workspace_id == token.workspace_id)
         ).all()
     }
+    source_record_ids = {record["source_record_id"] for record in records}
+    existing_source_record_ids = (
+        set(
+            db.scalars(
+                select(PilotEvidence.source_record_id).where(
+                    PilotEvidence.workspace_id == token.workspace_id,
+                    PilotEvidence.source == "otel",
+                    PilotEvidence.source_record_id.in_(source_record_ids),
+                )
+            ).all()
+        )
+        if source_record_ids
+        else set()
+    )
     accepted = duplicates = rejected = late = 0
     retention_floor = now - timedelta(days=settings.pilot_retention_days)
     expires_at = now + timedelta(days=settings.pilot_retention_days)
@@ -1185,14 +1203,18 @@ async def ingest_otel(
             continue
         if occurred_at < now - timedelta(minutes=15):
             late += 1
+        source_record_id = record["source_record_id"]
+        if source_record_id in existing_source_record_ids:
+            duplicates += 1
+            continue
         values = {
-            "id": _evidence_id(token.workspace_id, "otel", record["source_record_id"]),
+            "id": _evidence_id(token.workspace_id, "otel", source_record_id),
             "workspace_id": token.workspace_id,
             "incident_id": incident.id,
             "service_id": service.id,
             "kind": record["kind"],
             "source": "otel",
-            "source_record_id": record["source_record_id"],
+            "source_record_id": source_record_id,
             "occurred_at": occurred_at,
             "payload": record["payload"],
             "created_at": now,
@@ -1207,6 +1229,7 @@ async def ingest_otel(
             accepted += 1
         else:
             duplicates += 1
+        existing_source_record_ids.add(source_record_id)
     batch = PilotIngestBatch(
         id=f"batch_{uuid.uuid4().hex}",
         workspace_id=token.workspace_id,
@@ -1452,24 +1475,34 @@ async def receive_github_deployment(
         "late_arrival": late_arrival,
         "integration_source": "exercise_fixture" if exercise_fixture else "github_webhook",
     }
-    result = db.execute(
-        insert(PilotEvidence)
-        .values(
-            id=event_id,
-            workspace_id=workspace_id,
-            incident_id=incident.id,
-            service_id=service.id if service else incident.primary_service_id,
-            kind="deploy",
-            source="github",
-            source_record_id=source_record_id,
-            occurred_at=occurred_at,
-            payload=payload,
-            created_at=now,
-            expires_at=now + timedelta(days=settings.pilot_retention_days),
+    prior_evidence_id = db.scalar(
+        select(PilotEvidence.id).where(
+            PilotEvidence.workspace_id == workspace_id,
+            PilotEvidence.source == "github",
+            PilotEvidence.source_record_id == source_record_id,
         )
-        .on_conflict_do_nothing(constraint="uq_pilot_evidence_dedupe")
     )
-    duplicate = not result.rowcount
+    if prior_evidence_id is not None:
+        duplicate = True
+    else:
+        result = db.execute(
+            insert(PilotEvidence)
+            .values(
+                id=event_id,
+                workspace_id=workspace_id,
+                incident_id=incident.id,
+                service_id=service.id if service else incident.primary_service_id,
+                kind="deploy",
+                source="github",
+                source_record_id=source_record_id,
+                occurred_at=occurred_at,
+                payload=payload,
+                created_at=now,
+                expires_at=now + timedelta(days=settings.pilot_retention_days),
+            )
+            .on_conflict_do_nothing(constraint="uq_pilot_evidence_dedupe")
+        )
+        duplicate = not result.rowcount
     _audit(
         db,
         request,

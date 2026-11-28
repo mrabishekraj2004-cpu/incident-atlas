@@ -66,6 +66,7 @@ def _record(
             expires_at=datetime.now(UTC) + timedelta(days=30),
         )
     )
+    db.flush()
 
 
 def test_workspaces_and_incidents_are_hidden_across_memberships(pg_client: TestClient) -> None:
