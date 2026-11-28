@@ -305,16 +305,7 @@ jobs:
           python scripts/pilot_exercise.py --workspace payments-team
           cd web
           node tests/pilot-browser-smoke.mjs
-          export SCREENSHOT_DIR="$GITHUB_WORKSPACE/web/test-artifacts"
           npm run test:e2e
-      - name: Upload screenshots from the local CI browser run
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: incident-atlas-local-ci-browser-screenshots
-          path: web/test-artifacts/*.png
-          if-no-files-found: warn
-          retention-days: 14
       - name: Show local service logs on failure
         if: failure()
         run: |

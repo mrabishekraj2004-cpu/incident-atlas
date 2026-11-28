@@ -61,4 +61,4 @@ The `.invalid` URL is a safe API-mode build-check value only. Do not publish a s
 
 The Node test runner exercises the API client against mocked contract responses, including pagination, replay provenance, citation resolution, the live capability gate, API problem responses, cancellation, safe read retries, idempotency headers, and acknowledged simulation approvals.
 
-The browser workflow captures screenshots from the local CI API/PostgreSQL journey. The case study labels them as local CI images; they do not imply a public deployment.
+The browser workflow exercises the local CI API/PostgreSQL journey without retaining screenshots. Browser checks do not imply a public pilot deployment.
