@@ -22,6 +22,7 @@ web/test-artifacts/
 !.env.example
 !web/.env.development.fixture.example
 !web/.env.vercel.example
+!web/.env.pilot.example
 api/.env
 api/.env.*
 !api/.env.example

@@ -173,6 +173,18 @@ def apply_runtime_grants(
         "simulation_approvals",
         "audit_events",
         "guest_rate_events",
+        "pilot_workspaces",
+        "pilot_memberships",
+        "pilot_services",
+        "pilot_incidents",
+        "pilot_integrations",
+        "pilot_ingest_tokens",
+        "pilot_evidence",
+        "pilot_ingest_batches",
+        "pilot_snapshots",
+        "pilot_snapshot_evidence",
+        "pilot_reports",
+        "pilot_audit_events",
     )
     for table_name in read_tables:
         raw_connection.execute(
@@ -189,6 +201,12 @@ def apply_runtime_grants(
         "simulation_approvals",
         "audit_events",
         "guest_rate_events",
+        "pilot_evidence",
+        "pilot_ingest_batches",
+        "pilot_snapshots",
+        "pilot_snapshot_evidence",
+        "pilot_reports",
+        "pilot_audit_events",
     )
     for table_name in insert_tables:
         raw_connection.execute(
@@ -196,6 +214,22 @@ def apply_runtime_grants(
                 sql.Identifier(table_name), role
             )
         )
+
+    pilot_mutation_grants = {
+        "pilot_integrations": ("INSERT",),
+        "pilot_memberships": ("INSERT", "UPDATE", "DELETE"),
+    }
+    for table_name, operations in pilot_mutation_grants.items():
+        raw_connection.execute(
+            sql.SQL("GRANT {} ON TABLE public.{} TO {}").format(
+                sql.SQL(", ").join(sql.SQL(operation) for operation in operations),
+                sql.Identifier(table_name),
+                role,
+            )
+        )
+    raw_connection.execute(
+        sql.SQL("GRANT UPDATE (owner_team) ON TABLE public.pilot_services TO {}").format(role)
+    )
 
     raw_connection.execute(
         sql.SQL(

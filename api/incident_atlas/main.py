@@ -14,6 +14,7 @@ from incident_atlas.config import get_settings
 from incident_atlas.db import SessionLocal
 from incident_atlas.errors import ApiError
 from incident_atlas.observability import configure_otel
+from incident_atlas.pilot import router as pilot_router
 from incident_atlas.routes import liveness, readiness, router
 
 logger = logging.getLogger("incident_atlas.api")
@@ -39,11 +40,22 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_allowed_origins,
     allow_credentials=False,
-    allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["Content-Type", "Idempotency-Key", "X-Incident-Atlas-Visitor-ID"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "OPTIONS"],
+    allow_headers=[
+        "Authorization",
+        "Content-Type",
+        "Idempotency-Key",
+        "X-Atlas-Dev-User",
+        "X-Atlas-Incident-Id",
+        "X-GitHub-Delivery",
+        "X-GitHub-Event",
+        "X-Hub-Signature-256",
+        "X-Incident-Atlas-Visitor-ID",
+    ],
     expose_headers=["X-Request-ID", "Retry-After"],
 )
 app.include_router(router)
+app.include_router(pilot_router)
 
 
 def _problem(
@@ -123,8 +135,14 @@ async def request_context_and_limits(request: Request, call_next):
             return _problem(
                 request, 400, "invalid_content_length", "Content-Length must be an integer."
             )
-        if body_size < 0 or body_size > settings.max_request_bytes:
-            limit_kib = settings.max_request_bytes // 1024
+        request_limit = (
+            settings.pilot_max_payload_bytes
+            if request.url.path.startswith("/api/v1/pilot/ingest/")
+            or "/integrations/github/webhook" in request.url.path
+            else settings.max_request_bytes
+        )
+        if body_size < 0 or body_size > request_limit:
+            limit_kib = request_limit // 1024
             return _problem(
                 request,
                 413,

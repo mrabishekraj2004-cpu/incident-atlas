@@ -175,3 +175,26 @@ Both approval write routes accept the same request shape and behavior. They reje
 ## Public limits
 
 Initial policy: max 5 live analyses per visitor-source hash per 15 minutes, max 3 in-flight live calls per API process, max 15-minute evidence window, one provider attempt, max 2,000 evidence items in a live packet, max 16 KiB request body, at most 200 telemetry rows per page, and max 10 approval writes per source hash per hour. The API HMACs the client source for rate accounting and does not persist raw IP addresses. Adjust only using measured traffic and provider budget.
+
+## Workspace pilot API
+
+The pilot routes are additive under `/api/v1/pilot`. They return 404 when `PILOT_ENABLED` is false. Browser users authenticate with OIDC bearer tokens in hosted mode. Every read and write resolves a server-side membership and applies one of `owner`, `editor`, or `viewer`; production never accepts `X-Atlas-Dev-User`. Ingest uses a separate expiring service token scoped to a single workspace and service.
+
+| Method | Route | Permission and behavior |
+|---|---|---|
+| `GET` | `/workspaces` | List the caller's workspaces and role only. |
+| `GET` | `/workspaces/{workspace_id}/incidents` | Any member; omit expired evidence from coverage. |
+| `GET` | `/workspaces/{workspace_id}/incidents/{incident_id}/timeline` | Any member; active tenant evidence, time ordered. |
+| `POST` | `/workspaces/{workspace_id}/incidents/{incident_id}/investigations` | Owner/editor; captures a snapshot and runs rules only. |
+| `GET` | `/workspaces/{workspace_id}/incidents/{incident_id}/reports` | Any member; active saved reports. |
+| `GET` | `/workspaces/{workspace_id}/reports/{report_id}` | Any member; 404 outside the workspace or after expiry. |
+| `GET` | `/workspaces/{workspace_id}/snapshots/{snapshot_id}/evidence/{evidence_id}` | Any member; resolve from the exact unexpired immutable snapshot. |
+| `GET`, `PUT`, `DELETE` | `/workspaces/{workspace_id}/members...` | Owner manages roles; last owner cannot be removed or demoted. |
+| `PATCH` | `/workspaces/{workspace_id}/services/{service_id}/owner` | Owner only; change is audited. |
+| `GET` | `/workspaces/{workspace_id}/audit` | Any member; last 365 days, newest first. |
+| `POST` | `/ingest/otel/v1/{traces,metrics,logs}` | Service-token authenticated; bounded OTLP/HTTP protobuf. Requires `X-Atlas-Incident-Id`; accepts optional `Idempotency-Key`. |
+| `POST` | `/workspaces/{workspace_id}/integrations/github/webhook` | HMAC verified GitHub `deployment_status` only; repository must be mapped inside the requested workspace. |
+
+OTLP success responses include accepted, duplicate, rejected, and late-arrival counts. Retrying a timed-out request with the same body and `Idempotency-Key` returns the recorded outcome. Resending the same source record with a new key still deduplicates the record. Event timestamps may be late but must be within configured retention; missing signal kinds remain visible as coverage gaps. Ingestion bodies are capped at 65,536 bytes and 500 normalized records by default. Tokens expire after 90 days and are stored as hashes.
+
+The exercise helper creates a signed synthetic deployment payload locally; it does not use an installed GitHub App or contact an external GitHub account. Hosted delivery requires a real webhook registration by an authorized operator. See [the two-team exercise runbook](pilot-runbook.md) for exact commands and safety scope.

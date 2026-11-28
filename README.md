@@ -2,13 +2,13 @@
 
 ## 1. Project title and description
 
-Incident Atlas is an incident investigation demo for exploring synthetic service incidents. It brings timelines, service dependencies, metrics, logs, traces, saved investigation replays, and evidence references into one reviewable workflow. A visitor can record a simulated mitigation approval; the demo never changes an external system.
+Incident Atlas is a synthetic incident investigation demo with a separate, local-ready two-workspace pilot path. It brings timelines, service dependencies, metrics, logs, traces, saved investigations, and evidence references into one reviewable workflow. Mitigations remain simulation-only; the application has no remediation executor.
 
 ## 2. Live deployment link
 
 [Open the Incident Atlas demo](https://incident-atlas-demo.vercel.app/)
 
-The public site is a static frontend using bundled synthetic fixtures. It does not connect to the FastAPI service or PostgreSQL. Approvals are stored in the current browser; live analysis and server persistence are unavailable.
+The public site is a static frontend using bundled synthetic fixtures. It does not connect to FastAPI or PostgreSQL. Approvals are stored in the current browser; live analysis and server persistence are unavailable. The private workspace pilot is available only in a separately configured API deployment or local exercise.
 
 ## 3. Project overview and objectives
 
@@ -31,6 +31,8 @@ All incident data is authored synthetic data shaped like OpenTelemetry records. 
 - Follow report citations to the evidence items they reference.
 - Record a simulated mitigation approval; in the public static demo, it stays in the current browser.
 - Use an API-backed FastAPI/PostgreSQL mode locally. Its optional live-analysis route is disabled by default.
+- Exercise isolated Payments and Platform workspaces with server-checked roles, service ownership, shared timelines, an audit trail, OTLP telemetry ingestion, and signed GitHub deployment events.
+- Open a rules-baseline report against an immutable evidence snapshot; every citation resolves to the exact captured record. Missing signals and uncertainty remain visible.
 - View account and settings screens as frontend previews; they do not provide real authentication or server-side profiles.
 
 ## 5. Technology stack
@@ -41,12 +43,14 @@ All incident data is authored synthetic data shaped like OpenTelemetry records. 
 | Backend | Python 3.12, FastAPI, Pydantic, SQLAlchemy, Alembic |
 | Database | PostgreSQL 17 in the local Compose setup |
 | Testing | Node test runner, pytest, Playwright, TypeScript checks |
-| Hosting | Vercel for the public static frontend; FastAPI and PostgreSQL are not publicly deployed |
+| Telemetry | OpenTelemetry SDK sample service; OTLP/HTTP protobuf traces, metrics, and logs |
+| Authentication | OIDC JWT validation for hosted pilot; development-only seeded identities locally |
+| Hosting | Vercel for the public static frontend; FastAPI and PostgreSQL pilot hosting is prepared but not deployed |
 | CI | GitHub Actions |
 
 ## 6. System architecture
 
-The public deployment serves a static frontend and bundled fixtures. The repository also supports an API-backed local setup for development.
+The public deployment serves a static frontend and bundled fixtures. The separate pilot runs React/Vite with FastAPI and PostgreSQL, accepts authenticated workspace reads/writes, ingests bounded OTLP records and signed GitHub deployment events, and saves immutable evidence snapshots.
 
 ```mermaid
 flowchart TD
@@ -59,9 +63,16 @@ flowchart TD
     API --> DB[("PostgreSQL")]
     API -. "live analysis disabled by default" .-> Model["Model provider"]
   end
+
+  subgraph Pilot["Separate two-workspace pilot"]
+    Sample["Instrumented sample service"] -->|"OTLP HTTP"| PilotAPI["FastAPI pilot API"]
+    GitHub["Signed deployment webhook"] --> PilotAPI
+    Teams["OIDC-authenticated team users"] -->|"workspace-scoped API"| PilotAPI
+    PilotAPI --> PilotDB[("PostgreSQL")]
+  end
 ```
 
-The public Vercel build uses the static-demo mode and does not make API requests. The local API path serves synthetic fixtures, saved replays, and optional investigation endpoints. If enabled in a separately configured environment, the live-analysis path is server-side and bounded by evidence and request limits.
+The public Vercel build uses the static-demo mode and does not make API requests. The local API path serves synthetic fixtures and saved replays. The optional pilot API uses server-enforced workspace membership, hashes upstream record IDs within a tenant, and snapshots all evidence at investigation time. Reports use the rules baseline and do not call a model. Hosted pilot setup and limitations are in [the pilot runbook](docs/pilot-runbook.md).
 
 ## 7. Software design diagrams
 
@@ -80,12 +91,14 @@ The public Vercel build uses the static-demo mode and does not make API requests
 ├── data/
 │   ├── incidents/            # Public synthetic incident fixtures and replays
 │   └── evaluation/           # Separate local/CI evaluation data
-├── docs/
-│   └── docs and project documentation
+├── docs/                    # Architecture, API, operations, evaluation, and pilot guides
+│   ├── decisions/           # Short architecture decision records
+│   └── pilot/               # Facilitator, participant, and results templates
+├── samples/                 # Instrumented synthetic checkout/catalog exercise service
+├── scripts/                 # Repeatable exercise, evaluation, and deployment utilities
 ├── web/
 │   ├── src/                  # React application and API/data clients
 │   └── tests/                # Frontend and browser smoke checks
-├── scripts/                  # Release and deployment utilities
 ├── .github/workflows/        # CI workflow
 ├── compose.yaml              # Local PostgreSQL, API, and web services
 └── Dockerfile                 # API container image
@@ -93,7 +106,7 @@ The public Vercel build uses the static-demo mode and does not make API requests
 
 ## 9. Installation and setup
 
-For the full local stack, install Docker Engine with the Compose plugin, then run this from the repository root:
+For the public demo and local API stack, install Docker Engine with the Compose plugin, then run this from the repository root:
 
 ```bash
 docker compose up --build
@@ -110,6 +123,8 @@ VITE_DATA_MODE=static-demo npm run build
 ```
 
 For manual API setup and development commands, see [api/README.md](api/README.md) and [web/README.md](web/README.md).
+
+To seed the two isolated team workspaces, create local-only credentials, run the OpenTelemetry/GitHub exercise, reset it, and open the normal UI, follow [the exact pilot commands](docs/pilot-runbook.md).
 
 ## 10. Environment variables
 
@@ -128,6 +143,12 @@ The checked-in example files document configuration without containing productio
 | `RATE_LIMIT_HMAC_KEY` | API | Secret used for privacy-preserving rate-limit identifiers. |
 | `LIVE_ANALYSIS_ENABLED` | API | Defaults to `false`; live analysis remains disabled until deployment checks are complete. |
 | `OPENAI_API_KEY`, `OPENAI_MODEL` | API | Optional server-side provider configuration; not needed for the public demo or stored replays. |
+| `PILOT_ENABLED` | API | Enables the separately deployed workspace API; defaults to disabled outside local Compose. |
+| `PILOT_DEV_AUTH_ENABLED` | API | Local/test-only seeded identity switch; must be false in hosted production. |
+| `PILOT_OIDC_ISSUER`, `PILOT_OIDC_AUDIENCE`, `PILOT_OIDC_JWKS_URL` | API | Hosted pilot issuer, audience, and HTTPS key set for signed-in users. |
+| `PILOT_RETENTION_DAYS`, `PILOT_MAX_PAYLOAD_BYTES`, `PILOT_MAX_INGEST_RECORDS` | API | Pilot evidence expiry and ingestion bounds. |
+| `GITHUB_WEBHOOK_SECRETS` | API | JSON map from exact repository names to private webhook signing secrets. |
+| `VITE_PILOT_ENABLED`, `VITE_OIDC_*` | Frontend build | Separately built pilot UI feature flag and public OIDC client settings; never store private keys here. |
 
 Never put `OPENAI_API_KEY`, database credentials, or other server secrets in a `VITE_` variable. Frontend `VITE_` values are included in the browser bundle.
 
@@ -150,6 +171,12 @@ The API base path is `/api/v1`. Full request and response contracts are in [docs
 | `POST` | `/api/v1/investigations/{investigation_id}/mitigation-approvals`, `/api/v1/replays/{replay_id}/mitigation-approvals` | Record a simulation-only approval |
 | `GET` | `/api/v1/investigations/{investigation_id}/mitigation-approvals/{mitigation_id}`, `/api/v1/replays/{replay_id}/mitigation-approvals/{mitigation_id}` | Restore a saved approval for the current anonymous visitor |
 | `GET` | `/api/v1/snapshots/{snapshot_id}`, `/api/v1/snapshots/{snapshot_id}/evidence/{evidence_id}` | Read snapshot metadata and resolve cited evidence |
+| `GET` | `/api/v1/pilot/workspaces`, `/api/v1/pilot/workspaces/{workspace_id}/incidents` | List only the authenticated user's workspaces and incidents |
+| `GET` | `/api/v1/pilot/workspaces/{workspace_id}/incidents/{incident_id}/timeline` | Read the tenant-scoped shared evidence timeline |
+| `POST` | `/api/v1/pilot/ingest/otel/v1/{traces,metrics,logs}` | Ingest bounded, token-authenticated OTLP protobuf records |
+| `POST` | `/api/v1/pilot/workspaces/{workspace_id}/integrations/github/webhook` | Verify and ingest signed GitHub deployment status events |
+| `POST` | `/api/v1/pilot/workspaces/{workspace_id}/incidents/{incident_id}/investigations` | Store a rules-baseline report with an immutable evidence snapshot |
+| `GET` | `/api/v1/pilot/workspaces/{workspace_id}/reports/{report_id}`, `/api/v1/pilot/workspaces/{workspace_id}/snapshots/{snapshot_id}/evidence/{evidence_id}` | Read a stored pilot report and resolve its captured citations |
 
 Example local requests:
 
@@ -169,7 +196,7 @@ curl -X POST http://localhost:8000/api/v1/replays/replay-cache-v1/mitigation-app
 
 ## 12. Testing
 
-The CI workflow in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) covers PostgreSQL migrations and backend integration tests, Python lint and dependency auditing, frontend tests/typechecking/build and dependency auditing, API container startup, and desktop/mobile browser flows. The static-demo/Vercel change passed [GitHub Actions PR run #3](https://github.com/mrabishekraj2004-cpu/incident-atlas/actions/runs/45265136934) before it was merged; see [Actions](https://github.com/mrabishekraj2004-cpu/incident-atlas/actions) for the current branch status.
+The CI workflow in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) covers PostgreSQL migrations and backend integration tests, workspace isolation and citation stability, ingestion retry/dedup/late/partial paths, API container startup, restore verification, evaluation harness, frontend checks, the static demo browser path, and a local pilot browser flow. PostgreSQL, Docker, and browser workflows run on GitHub-hosted CI; a local skip does not count as a pass. Check [Actions](https://github.com/mrabishekraj2004-cpu/incident-atlas/actions) for the current branch run.
 
 Run the main checks locally:
 
@@ -198,7 +225,7 @@ The public frontend is deployed on Vercel from the `web/` root directory:
 4. Enable **Include source files outside of the Root Directory in the Build Step**, because the frontend imports synthetic fixtures from `data/incidents/`.
 5. Keep the checked-in Vercel rewrite so direct navigation and refreshes work on app routes.
 
-The deployed site is [incident-atlas-demo.vercel.app](https://incident-atlas-demo.vercel.app/). The FastAPI service and PostgreSQL database are not deployed. [docs/deployment.md](docs/deployment.md) contains the separate backend hosting plan; its backend steps are not part of the current public deployment.
+The deployed site is [incident-atlas-demo.vercel.app](https://incident-atlas-demo.vercel.app/). The FastAPI service and PostgreSQL pilot database are not deployed. The optional paid hosting configuration, staging steps, rollback, and current status are in [docs/deployment.md](docs/deployment.md). The implementation and verification status is recorded in [docs/pilot-delivery-report.md](docs/pilot-delivery-report.md).
 
 ## 14. Challenges and solutions
 
@@ -209,6 +236,7 @@ The deployed site is [incident-atlas-demo.vercel.app](https://incident-atlas-dem
 | Avoid implying that a replay is fresh analysis | Label stored reports as replays and keep them independent from provider calls. |
 | Demonstrate an approval step without affecting operations | Store explicit simulation-only approvals; provide no external remediation executor. |
 | Keep a dependable public demo when backend hosting is absent | Ship a static Vercel build with bundled synthetic fixtures and browser-local approvals. |
+| Allow a small controlled two-team exercise | Add a separate optional authenticated pilot API and synthetic OpenTelemetry sample service while keeping the public static demo keyless. |
 
 ## 15. Future improvements
 

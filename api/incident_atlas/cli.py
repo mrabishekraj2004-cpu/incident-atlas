@@ -5,7 +5,11 @@ from sqlalchemy import select
 
 from incident_atlas.db import SessionLocal
 from incident_atlas.deployment import bootstrap_deployment_database, bootstrap_local_database
-from incident_atlas.evaluation import evaluate_expanded_dataset, evaluate_fixture_dataset
+from incident_atlas.evaluation import (
+    evaluate_ai_rule_harness,
+    evaluate_expanded_dataset,
+    evaluate_fixture_dataset,
+)
 from incident_atlas.fixtures import fixture_manifest, seed_evaluation, seed_runtime
 from incident_atlas.models import EvidenceSnapshot, Incident, SnapshotEvidence
 from incident_atlas.rules import evaluate_rules
@@ -60,16 +64,58 @@ def main() -> None:
             "rules-baseline",
             "evaluate-fixtures",
             "evaluate-expanded",
+            "evaluate-ai-rules",
             "bootstrap-runtime",
             "deploy-bootstrap",
         ],
     )
+    parser.add_argument("--mock-provider", action="store_true")
+    parser.add_argument("--live-provider", action="store_true")
     args = parser.parse_args()
+    if args.mock_provider and args.live_provider:
+        parser.error("choose only one provider mode")
     if args.command == "evaluate-fixtures":
         print(json.dumps(evaluate_fixture_dataset(), indent=2, sort_keys=True))
         return
     if args.command == "evaluate-expanded":
         print(json.dumps(evaluate_expanded_dataset(), indent=2, sort_keys=True))
+        return
+    if args.command == "evaluate-ai-rules":
+        if args.live_provider:
+            from incident_atlas.config import get_settings
+            from incident_atlas.provider import run_responses_inference
+
+            settings = get_settings()
+            if not settings.live_enabled:
+                parser.error(
+                    "live provider evaluation requires LIVE_ANALYSIS_ENABLED and a configured key"
+                )
+
+            def run_live_provider(packet):
+                result = run_responses_inference(settings, packet)
+                return {
+                    "hypotheses": [
+                        {
+                            "statement": hypothesis.statement,
+                            "supporting_evidence_ids": hypothesis.supporting_evidence_ids,
+                            "contradicting_evidence_ids": hypothesis.contradicting_evidence_ids,
+                        }
+                        for hypothesis in result.draft.hypotheses
+                    ],
+                    "usage": {
+                        "input_tokens": result.input_tokens,
+                        "output_tokens": result.output_tokens,
+                    },
+                    "provider_request_id": result.provider_request_id,
+                    "cost_usd": None,
+                }
+
+            result = evaluate_ai_rule_harness(run_live_provider)
+        elif args.mock_provider:
+            result = evaluate_ai_rule_harness(mock_provider=True)
+        else:
+            result = evaluate_ai_rule_harness()
+        print(json.dumps(result, indent=2, sort_keys=True))
         return
     if args.command == "bootstrap-runtime":
         print(json.dumps(bootstrap_local_database(), indent=2, sort_keys=True))
