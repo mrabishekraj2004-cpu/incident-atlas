@@ -227,7 +227,7 @@ The public frontend is deployed on Vercel from the `web/` root directory:
 
 The deployed site is [incident-atlas-demo.vercel.app](https://incident-atlas-demo.vercel.app/). The FastAPI service and PostgreSQL pilot database are not deployed. The optional paid hosting configuration, staging steps, rollback, and current status are in [docs/deployment.md](docs/deployment.md). The implementation and verification status is recorded in [docs/pilot-delivery-report.md](docs/pilot-delivery-report.md).
 
-For deeper pilot and evidence details, see the [pilot operations guide](docs/pilot-operations.md), [synthetic scenario catalog](docs/incident-scenarios.md), and [evaluation report](docs/evaluation-report.md). The pilot kit includes a [facilitator guide](docs/pilot/facilitator-guide.md), [participant instructions](docs/pilot/participant-instructions.md), and a [results template](docs/pilot/results-template.md).
+For deeper pilot and evidence details, see the [pilot operations guide](docs/pilot-operations.md), [synthetic scenario catalog](docs/incident-scenarios.md), and [evaluation report](docs/evaluation-report.md). The pilot kit includes a [facilitator guide](docs/pilot/facilitator-guide.md), [participant instructions](docs/pilot/participant-instructions.md), and a [results template](docs/pilot/results-template.md). See also the [portfolio case study](docs/portfolio-case-study.md).
 
 ## 14. Challenges and solutions
 
