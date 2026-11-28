@@ -15,13 +15,23 @@ import uuid
 from datetime import UTC, datetime
 
 
-def _request(url: str, *, method: str = "GET", payload: object | None = None, headers: dict[str, str] | None = None) -> object:
+def _request(
+    url: str,
+    *,
+    method: str = "GET",
+    payload: object | None = None,
+    headers: dict[str, str] | None = None,
+) -> object:
     body = None if payload is None else json.dumps(payload, separators=(",", ":")).encode()
     request = urllib.request.Request(
         url,
         data=body,
         method=method,
-        headers={"Accept": "application/json", "Content-Type": "application/json", **(headers or {})},
+        headers={
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            **(headers or {}),
+        },
     )
     try:
         with urllib.request.urlopen(request, timeout=10) as response:
@@ -91,7 +101,11 @@ def run(workspace: str, api_base: str, service_url: str) -> dict[str, object]:
     return {
         "synthetic_exercise": True,
         "workspace": workspace,
-        "scenario": "checkout latency after deploy" if workspace == "payments-team" else "catalog latency after deploy",
+        "scenario": (
+            "checkout latency after deploy"
+            if workspace == "payments-team"
+            else "catalog latency after deploy"
+        ),
         "incident_id": incident_id,
         "baseline_requests": len(baseline),
         "post_deployment_requests": len(regression),
@@ -100,7 +114,10 @@ def run(workspace: str, api_base: str, service_url: str) -> dict[str, object]:
         "deployment_event": webhook_result,
         "export_flush_before": flush_before,
         "export_flush_after": flush_after,
-        "next_step": f"Open http://localhost:5173/pilot?workspace={workspace} and investigate {incident_id}.",
+        "next_step": (
+            f"Open http://localhost:5173/pilot?workspace={workspace} and "
+            f"investigate {incident_id}."
+        ),
     }
 
 
@@ -108,9 +125,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--workspace", choices=("payments-team", "platform-team"), required=True)
     parser.add_argument("--api-base", default=os.getenv("PILOT_API_BASE_URL", "http://127.0.0.1:8000/api/v1"))
-    parser.add_argument("--service-url", default=os.getenv("PILOT_SERVICE_URL", "http://127.0.0.1:8100"))
+    parser.add_argument(
+        "--service-url", default=os.getenv("PILOT_SERVICE_URL", "http://127.0.0.1:8100")
+    )
     args = parser.parse_args()
-    print(json.dumps(run(args.workspace, args.api_base.rstrip("/"), args.service_url.rstrip("/")), indent=2))
+    result = run(args.workspace, args.api_base.rstrip("/"), args.service_url.rstrip("/"))
+    print(json.dumps(result, indent=2))
 
 
 if __name__ == "__main__":
