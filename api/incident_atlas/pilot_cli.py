@@ -92,6 +92,9 @@ def seed(session: Session) -> dict[str, int]:
                 )
             )
             created["services"] += 1
+        # PostgreSQL checks the incident's composite workspace/service FK at
+        # insert time; flush the service before adding its incident.
+        session.flush()
         incident = session.scalar(
             select(PilotIncident).where(
                 PilotIncident.workspace_id == data["id"],

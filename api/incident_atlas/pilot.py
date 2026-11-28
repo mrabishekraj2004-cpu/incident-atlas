@@ -1436,7 +1436,10 @@ async def receive_github_deployment(
         240,
     )
     description = str(status.get("description") or deployment.get("description") or "")
-    exercise_fixture = description.lower().startswith("synthetic checkout latency exercise")
+    exercise_fixture = any(
+        str(value or "").lower().startswith("synthetic checkout latency exercise")
+        for value in (status.get("description"), deployment.get("description"))
+    )
     payload = {
         "title": title,
         "summary": _clean_text(description or "GitHub deployment status event"),
