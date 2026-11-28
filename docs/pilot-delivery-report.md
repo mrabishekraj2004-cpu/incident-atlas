@@ -1,8 +1,8 @@
 # Evidence-backed pilot delivery report
 
-**Prepared:** 2026-11-27  
+**Prepared:** 2026-11-28  
 **Repository baseline reviewed:** [`8d166fb`](https://github.com/mrabishekraj2004-cpu/incident-atlas/commit/8d166fb0b529256ad34903a81168b2d653fd3ca2)  
-**Status:** implementation and local checks complete; hosted CI and staging are pending.
+**Status:** implementation is complete. Local checks passed where the sandbox permits them. Hosted CI has passed backend, frontend, container, and release-archive jobs; the browser journey is being rerun after a timestamp-ordering fix. Staging is not deployed.
 
 ## Starting gaps
 
@@ -24,7 +24,8 @@ The baseline already provided the keyless Vercel static demo, deterministic synt
 - Ruff passed. `uv audit --locked` reported no known vulnerabilities or adverse statuses in 66 packages.
 - Frontend tests passed **16/16**; typecheck and Vercel static-demo production build passed. `npm audit --audit-level=moderate` reported **0 vulnerabilities**.
 - Offline Alembic SQL generation and Python compilation passed in the preceding review.
-- Local Playwright could not run because Chromium is not installed. Docker/PostgreSQL and the disposable restore check were unavailable locally. Hosted CI is configured to run these checks and the complete synthetic pilot browser journey; its result will be recorded here after it completes.
+- Local Playwright could not run because Chromium is not installed. Docker/PostgreSQL and the disposable restore check were unavailable locally. Hosted CI runs these checks and the complete synthetic pilot browser journey; the latest observed job results are below.
+- GitHub Actions run [#29](https://github.com/mrabishekraj2004-cpu/incident-atlas/actions/runs/46118643910) passed `backend-postgres`, `frontend`, `container`, and `release-archive`. The browser check found that whole-second deployment timestamps could place the event after baseline metrics in a fast exercise. The exercise now preserves microseconds in commit [`4371cb8`](https://github.com/mrabishekraj2004-cpu/incident-atlas/commit/4371cb85cc261c0492dde415b0d30bfa207a1498); a fresh browser result is pending.
 
 ## Deployment and pilot status
 
