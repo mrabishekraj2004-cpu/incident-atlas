@@ -45,10 +45,16 @@ from incident_atlas.models import (
 
 logger = logging.getLogger("incident_atlas.pilot")
 SENSITIVE_KEY = re.compile(
-    r"(?:email|user\.id|card|cvv|password|passwd|token|secret|authorization|cookie|address)",
+    r"(?:email|user[._-]?id|card|cvv|password|passwd|passphrase|token|secret|"
+    r"api[._-]?key|access[._-]?token|refresh[._-]?token|authorization|cookie|"
+    r"session|address|phone|ssn|credential)",
     re.IGNORECASE,
 )
 BEARER_TEXT = re.compile(r"(?i)\b(bearer\s+)[A-Za-z0-9._~+/=-]+")
+API_TOKEN_TEXT = re.compile(
+    r"(?i)\b(?:sk|rk|pk|ghp|gho|ghu|ghs|glpat|github_pat|xox[baprs])[-_]"
+    r"[A-Za-z0-9_-]{12,}"
+)
 EMAIL_TEXT = re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.IGNORECASE)
 SENSITIVE_VALUE_TEXT = re.compile(
     r"(?i)\b(password|passwd|passphrase|token|secret|authorization|api[_-]?key|"
@@ -938,6 +944,7 @@ def _proto_attributes(attributes: Any) -> dict[str, Any]:
 
 def _clean_text(value: str, maximum: int = 2048) -> str:
     cleaned = BEARER_TEXT.sub(r"\1[redacted]", value)
+    cleaned = API_TOKEN_TEXT.sub("[redacted-token]", cleaned)
     cleaned = EMAIL_TEXT.sub("[redacted-email]", cleaned)
     cleaned = CARD_VALUE_TEXT.sub(r"\1\2[redacted]", cleaned)
     cleaned = SENSITIVE_VALUE_TEXT.sub(r"\1\2[redacted]", cleaned)

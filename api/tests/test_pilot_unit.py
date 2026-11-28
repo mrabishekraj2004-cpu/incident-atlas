@@ -51,6 +51,22 @@ def test_otlp_attribute_values_are_redacted_recursively():
     assert "other@example.com" not in rendered
 
 
+def test_api_key_attributes_and_token_shaped_values_are_redacted():
+    secret = "sk-proj-abcdefghijklmnopqrstuvwxyz012345"
+    api_key = KeyValue(key="api_key")
+    api_key.value.string_value = secret
+    note = KeyValue(key="deployment.note")
+    note.value.string_value = f"provider rejected token {secret} during setup"
+
+    sanitized = _proto_attributes([api_key, note])
+    rendered = str(sanitized)
+
+    assert "api_key" not in sanitized
+    assert secret not in rendered
+    assert "[redacted-token]" in rendered
+    assert "deployment.note" in sanitized
+
+
 def test_pilot_evidence_primary_keys_are_stable_and_workspace_scoped():
     first = _evidence_id("payments-team", "github", "deployment:42:success")
     retry = _evidence_id("payments-team", "github", "deployment:42:success")
