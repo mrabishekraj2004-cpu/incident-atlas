@@ -52,7 +52,9 @@ def run(workspace: str, api_base: str, service_url: str) -> dict[str, object]:
     flush_before = _request(f"{service_url}/__exercise/flush", method="POST", payload={})
     _request(f"{service_url}/__exercise/activate-regression", method="POST", payload={})
 
-    now = datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
+    # Keep sub-second precision so the deployment stays after the flushed
+    # baseline metrics and before regression metrics, even in a fast CI run.
+    now = datetime.now(UTC).isoformat(timespec="microseconds").replace("+00:00", "Z")
     deployment_id = int(time.time() * 1000)
     delivery_id = str(uuid.uuid4())
     webhook_payload = {
