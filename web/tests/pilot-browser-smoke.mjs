@@ -18,9 +18,9 @@ try {
   await page.getByRole('heading', { name: 'Evidence handoff' }).waitFor()
   await page.getByRole('heading', { name: 'Checkout latency regression after deploy' }).waitFor()
   await page.getByText('synthetic GitHub event').waitFor()
-  await page.getByText('ingested metric').waitFor()
-  await page.getByText('ingested log').waitFor()
-  await page.getByText('ingested trace').waitFor()
+  await page.locator('.pilot-event-top').getByText('ingested metric', { exact: true }).first().waitFor()
+  await page.locator('.pilot-event-top').getByText('ingested log', { exact: true }).first().waitFor()
+  await page.locator('.pilot-event-top').getByText('ingested trace', { exact: true }).first().waitFor()
 
   await page.getByRole('button', { name: 'Open investigation' }).click()
   await page.getByRole('heading', { name: 'Evidence-backed hypothesis' }).waitFor()

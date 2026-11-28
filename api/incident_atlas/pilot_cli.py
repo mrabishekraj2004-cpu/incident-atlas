@@ -79,6 +79,9 @@ def seed(session: Session) -> dict[str, int]:
         if workspace is None:
             session.add(PilotWorkspace(id=data["id"], name=data["name"], created_at=now))
             created["workspaces"] += 1
+        # This model has no ORM relationship mapping, so establish the parent
+        # row before flushing the service foreign key.
+        session.flush()
         service = session.get(PilotService, data["service_id"])
         if service is None:
             session.add(
