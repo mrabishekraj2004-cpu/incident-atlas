@@ -1,7 +1,7 @@
 # Architecture
 
-**Status:** Step 1 blueprint  
-**Reviewed:** 2026-11-22
+**Status:** Existing demo plus additive two-workspace pilot path  
+**Reviewed:** 2026-11-27
 
 ## Selected stack
 
@@ -13,10 +13,31 @@
 | Incident telemetry | Versioned, deterministic synthetic OpenTelemetry-shaped metrics, logs, spans, timeline events, and dependency edges stored in PostgreSQL. | Reproducible public data; no customer system or collector credential required. The shape follows common OpenTelemetry signal concepts without requiring a running demo environment. |
 | App observability | OpenTelemetry SDK in the API, local OpenTelemetry Collector, Prometheus metrics, and Jaeger trace UI in the local Compose profile. | Observe API latency, errors, model-call timing, and request traces separately from the synthetic incident dataset. The Collector provides a vendor-neutral telemetry pipeline. |
 | AI workflow | Small, explicit Python orchestration function; OpenAI Responses API; strict structured output schema. The application owns every data query and validation step. | Fixed one-pass workflow is easier to review, evaluate, and bound than an autonomous agent. Structured output supports rendering typed hypotheses, uncertainty, and evidence references. |
-| Hosting | Static site on Netlify; FastAPI container and managed PostgreSQL on Render; server-side model credential in Render secret configuration. | Static/CDN delivery for the UI and managed hosting for the one dynamic service and database. Public replay does not depend on model-provider availability. |
+| Hosting | Vercel static demo; optional FastAPI container and PostgreSQL pilot blueprint on Render. | Static public demo is independent from pilot API/database. The pilot blueprint is prepared but not provisioned. |
 | Source control / CI | Public GitHub repository with documentation, locked dependencies, CI checks, deployment configuration, and no secrets. | Keeps scenario definitions and evaluation method inspectable and makes the demo reproducible. The repository and CI are implemented; the current release and deployment status is recorded in the pre-deployment report. |
 
-This Step 1 blueprint selected the stack before pinning versions. The implementation now records compatible dependencies in the backend and frontend lockfiles and READMEs.
+This design keeps the existing public, keyless demo path and adds a separate pilot API path. Dependencies are pinned in the backend and frontend lockfiles.
+
+## Pilot extension
+
+The public site remains a static, keyless Vercel build with bundled synthetic fixtures. The separate pilot UI path speaks to FastAPI and PostgreSQL. It uses OIDC/JWKS validation in hosted mode and development-only seeded identities locally. Owners manage membership, roles, and service ownership. Editors can open investigations. Every API request checks workspace membership; the UI is not the security boundary.
+
+The exercise service emits traces, metrics, and logs as OTLP/HTTP protobuf. The FastAPI receiver validates a short-lived service token and incident mapping, normalizes/redacts bounded records, deduplicates by workspace/source/source-record ID, and stores accepted evidence. A GitHub `deployment_status` webhook is HMAC-verified and mapped to an incident in the same workspace. The rehearsal helper signs a synthetic event locally and does not contact GitHub. PostgreSQL stores the shared ordered timeline and audit entries.
+
+An investigation copies active evidence into immutable workspace-owned snapshot rows and stores a canonical SHA-256 digest. The rules baseline evaluates that snapshot and saves a report with hypotheses, uncertainty, evidence gaps, and citation IDs. Citation reads resolve from the copy, so later timeline changes cannot rewrite a saved investigation. Evidence, snapshots, and reports expire after the configured period (30-day default); reads hide expired records immediately and an operator cleanup command removes them. Audit rows are shown for the last 365 days.
+
+The pilot does not call a model provider and exposes no mitigation execution action. The offline evaluation harness compares a real adapter only when explicitly invoked; the live provider comparison remains pending. The public static demo's simulation-only approval behavior is unchanged.
+
+```mermaid
+flowchart TD
+  Users["Team users"] -->|"OIDC bearer, workspace role"| API["FastAPI pilot API"]
+  Sample["Instrumented sample service"] -->|"OTLP protobuf"| API
+  GitHub["Signed deployment_status webhook"] --> API
+  API -->|"tenant-scoped evidence, snapshots, reports"| DB[("PostgreSQL")]
+  API -->|"local or hosted UI API"| UI["React pilot UI"]
+```
+
+The optional hosted API/PostgreSQL topology is in [`render.pilot.yaml`](../render.pilot.yaml) and is not deployed. See the [pilot runbook](pilot-runbook.md) for the reproducible local flow.
 
 ## System components
 

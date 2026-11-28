@@ -1,8 +1,8 @@
 # Data design
 
-**Status:** Step 1 blueprint  
+**Status:** Existing demo schema plus additive pilot schema  
 **Database:** PostgreSQL  
-**Reviewed:** 2026-11-22
+**Reviewed:** 2026-11-27
 
 ## Design rules
 
@@ -77,6 +77,22 @@ Join table `incident_id`, `service_id`, `role` (`affected`, `dependency`, `upstr
 
 `simulation_approvals.visitor_session_hash` stores an HMAC of the browser's random anonymous UUID when `X-Incident-Atlas-Visitor-ID` is present. Separate browser profiles on the same public IP can record separate simulations, and a reload can retrieve only the matching browser's saved record. Callers without the header fall back to the proxy-validated client address. This token is a convenience identity for the public demo, not authentication; rate limits continue to use the trusted client address and are shared by visitors behind the same NAT.
 
+## Additive pilot tables
+
+Migration `0005_authenticated_pilot` adds a separate set of tenant-keyed records without changing the public demo's incident, replay, snapshot, or approval schemas:
+
+- `pilot_workspaces` and `pilot_memberships`: workspace identity and an OIDC subject's `owner`, `editor`, or `viewer` role.
+- `pilot_services` and `pilot_incidents`: workspace-owned service catalog, owning team, and exercise incident. Composite workspace foreign keys prevent pointing an incident at another workspace's service.
+- `pilot_integrations`: one GitHub repository/incident mapping per workspace, protected by the configured webhook-signing secret.
+- `pilot_ingest_tokens`: workspace/service-scoped token hash, expiry, and revocation timestamp. Raw tokens are returned only by a local bootstrap/provisioning operation.
+- `pilot_evidence`: normalized metric/log/trace/deploy record, event time, receive time, source, redacted payload, and expiry. Tenant-derived IDs and a workspace/source/source-record unique constraint prevent cross-workspace ID collisions and duplicate events.
+- `pilot_ingest_batches`: idempotency key, body hash, and accepted/duplicate/rejected counts for retry handling.
+- `pilot_snapshots` and `pilot_snapshot_evidence`: immutable evidence copy and canonical SHA-256 hash captured for an investigation. Tenant and composite keys constrain snapshot/incident/report relationships.
+- `pilot_reports`: rules-baseline output and timing tied to the snapshot, with expiry.
+- `pilot_audit_events`: actor, action, request ID, entity, and bounded attributes; records membership, ownership, reset, and investigation changes.
+
+The API does not rely on PostgreSQL row-level security. It applies workspace predicates in the query boundary and uses composite tenant foreign keys. PostgreSQL integration tests are the release gate for isolation, citation stability, and permission changes. The pilot role grants must include membership maintenance, integration registration, and service-owner updates while retaining least privilege.
+
 ## Relationships
 
 ```mermaid
@@ -93,6 +109,32 @@ erDiagram
   SERVICES ||--o{ DEPENDENCY_EDGES : participates
 ```
 
+The pilot uses separate workspace-keyed tables and composite tenant references:
+
+```mermaid
+erDiagram
+  PILOT_WORKSPACES ||--o{ PILOT_MEMBERSHIPS : grants
+  PILOT_WORKSPACES ||--o{ PILOT_SERVICES : owns
+  PILOT_WORKSPACES ||--o{ PILOT_INCIDENTS : tracks
+  PILOT_SERVICES ||--o{ PILOT_INCIDENTS : assigned
+```
+
+```mermaid
+erDiagram
+  PILOT_INCIDENTS ||--o{ PILOT_EVIDENCE : receives
+  PILOT_WORKSPACES ||--o{ PILOT_EVIDENCE : scopes
+  PILOT_INCIDENTS ||--o{ PILOT_SNAPSHOTS : freezes
+  PILOT_SNAPSHOTS ||--o{ PILOT_SNAPSHOT_EVIDENCE : copies
+```
+
+```mermaid
+erDiagram
+  PILOT_SNAPSHOTS ||--o{ PILOT_REPORTS : grounds
+  PILOT_WORKSPACES ||--o{ PILOT_REPORTS : scopes
+  PILOT_WORKSPACES ||--o{ PILOT_AUDIT_EVENTS : records
+  PILOT_WORKSPACES ||--o{ PILOT_INTEGRATIONS : configures
+```
+
 ## Data lifecycle
 
 1. Versioned source fixtures are loaded by an idempotent seed command with `fixture_version` and `scenario_seed`.
@@ -102,6 +144,8 @@ erDiagram
 5. Replay reports are loaded as precomputed fixture records tied to an immutable evidence snapshot.
 6. Simulation approval appends an audit row; no service mutation is scheduled or dispatched.
 
+For the pilot, a workspace-scoped service token receives a bounded OTLP batch and stores normalized evidence. A rules-baseline investigation copies active records into `pilot_snapshot_evidence`, persists the snapshot hash and report, and returns citation IDs that resolve through the same workspace/snapshot key. The pilot path does not call an AI provider or write to production services.
+
 ## Retention and privacy
 
-Fixtures and replay reports are versioned project data and remain until a fixture version is deprecated. Failed/live run metadata and anonymized rate accounting should have a documented bounded retention period (initial target: 30 days). Raw IP addresses, visitor names, emails, and uploaded text are not stored. Avoid putting raw provider request/response payloads into general logs; store only schema-validated report fields and provider usage metadata. Backups are needed for paid public deployment but the fixture set must be reproducible from source files.
+Public fixtures and stored demo replays remain versioned project data. Pilot evidence, snapshots, and reports expire after the configured 7–365 days (30-day default); reads hide expired records and `incident_atlas.pilot_cli prune` performs deletion. Audit entries are shown and retained for 365 days. Ingestion batches and stale tokens are pruned after 30 and 365 days respectively. Raw IPs are not stored by the pilot. Attribute names and text matching common secrets, emails, and card-like values are redacted before storage, but only controlled synthetic records are approved for exercise. Backups and restorations must be exercised before hosted staging.

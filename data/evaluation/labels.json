@@ -3,6 +3,7 @@
   "cases": [
     {
       "case_id":"case-cache-v1",
+      "author":"Incident Atlas project team; individual author not recorded",
       "incident_id":"inc-cache-collapse-001",
       "fixture_version":"1.0.0",
       "expected_primary_label":"cache_key_version_mismatch",
@@ -14,6 +15,7 @@
     },
     {
       "case_id":"case-pool-v1",
+      "author":"Incident Atlas project team; individual author not recorded",
       "incident_id":"inc-inventory-pool-002",
       "fixture_version":"1.0.0",
       "expected_primary_label":"inventory_connection_leak",
@@ -25,6 +27,7 @@
     },
     {
       "case_id":"case-gateway-v1",
+      "author":"Incident Atlas project team; individual author not recorded",
       "incident_id":"inc-payment-gateway-003",
       "fixture_version":"1.0.0",
       "expected_primary_label":"upstream_payment_gateway_latency",

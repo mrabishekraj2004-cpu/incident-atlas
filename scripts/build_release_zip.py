@@ -37,11 +37,6 @@ REQUIRED_PATHS = {
     "web/package.json",
     "docs/deployment.md",
     "docs/portfolio-case-study.md",
-    "docs/screenshots/01-dashboard-desktop.png",
-    "docs/screenshots/02-incident-detail-desktop.png",
-    "docs/screenshots/03-stored-replay-desktop.png",
-    "docs/screenshots/04-simulated-approval-desktop.png",
-    "docs/screenshots/05-dashboard-mobile.png",
 }
 
 
@@ -88,6 +83,14 @@ def inspect_archive(archive: Path) -> tuple[int, int]:
         required_missing = REQUIRED_PATHS - names
         if required_missing:
             raise ValueError(f"Archive is missing required project files: {sorted(required_missing)}")
+        screenshot_paths = sorted(
+            name
+            for name in names
+            if "screenshot" in PurePosixPath(name).name.lower()
+            or "screenshots" in {part.lower() for part in PurePosixPath(name).parts}
+        )
+        if screenshot_paths:
+            raise ValueError(f"Archive contains screenshot files: {screenshot_paths}")
         prohibited = [name for name in names if forbidden(PurePosixPath(name))]
         if prohibited:
             raise ValueError(f"Archive contains prohibited paths: {sorted(prohibited)}")

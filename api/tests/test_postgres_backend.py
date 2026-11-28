@@ -190,6 +190,26 @@ def test_runtime_role_has_only_required_table_operations(clean_postgres):
             assert connection.scalar(
                 text("SELECT has_table_privilege(current_user, 'public.incidents', 'SELECT')")
             )
+            for privilege in ("INSERT", "UPDATE", "DELETE"):
+                assert connection.scalar(
+                    text(
+                        "SELECT has_table_privilege(current_user, "
+                        "'public.pilot_memberships', :privilege)"
+                    ),
+                    {"privilege": privilege},
+                )
+            assert connection.scalar(
+                text(
+                    "SELECT has_column_privilege(current_user, 'public.pilot_services', "
+                    "'owner_team', 'UPDATE')"
+                )
+            )
+            assert connection.scalar(
+                text(
+                    "SELECT has_table_privilege(current_user, 'public.pilot_integrations', "
+                    "'INSERT')"
+                )
+            )
             assert not connection.scalar(
                 text("SELECT has_table_privilege(current_user, 'public.incidents', 'UPDATE')")
             )

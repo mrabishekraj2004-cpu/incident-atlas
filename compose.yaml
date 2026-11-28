@@ -24,6 +24,11 @@ services:
       DATABASE_URL: postgresql+psycopg://incident_atlas:incident_atlas_local_only@db:5432/incident_atlas
       CORS_ALLOWED_ORIGINS: '["http://localhost:5173","http://127.0.0.1:5173"]'
       RATE_LIMIT_HMAC_KEY: local-compose-only-change-before-hosting
+      PILOT_ENABLED: ${PILOT_ENABLED:-true}
+      PILOT_DEV_AUTH_ENABLED: ${PILOT_DEV_AUTH_ENABLED:-true}
+      PILOT_MAX_PAYLOAD_BYTES: ${PILOT_MAX_PAYLOAD_BYTES:-65536}
+      PILOT_RETENTION_DAYS: ${PILOT_RETENTION_DAYS:-30}
+      GITHUB_WEBHOOK_SECRETS: ${GITHUB_WEBHOOK_SECRETS:-}
       LIVE_ANALYSIS_ENABLED: ${LIVE_ANALYSIS_ENABLED:-false}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-6.1-terra}
@@ -57,6 +62,10 @@ services:
       VITE_API_BASE_URL: /api/v1
       VITE_API_PROXY_TARGET: http://api:8000
       VITE_DATA_MODE: api
+      VITE_PILOT_ENABLED: "true"
+      VITE_OIDC_AUTHORITY: ${VITE_OIDC_AUTHORITY:-}
+      VITE_OIDC_CLIENT_ID: ${VITE_OIDC_CLIENT_ID:-}
+      VITE_OIDC_REDIRECT_URI: ${VITE_OIDC_REDIRECT_URI:-}
     ports:
       - "5173:5173"
     volumes:

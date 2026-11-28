@@ -45,6 +45,18 @@ class Settings(BaseSettings):
     model_read_timeout_seconds: float = Field(default=12.0, gt=0, le=60)
     investigation_deadline_seconds: float = Field(default=18.0, gt=0, le=90)
     otel_exporter_otlp_endpoint: str | None = None
+    pilot_enabled: bool = False
+    pilot_dev_auth_enabled: bool = False
+    pilot_oidc_issuer: str | None = None
+    pilot_oidc_audience: str | None = None
+    pilot_oidc_jwks_url: str | None = None
+    pilot_retention_days: int = Field(default=30, ge=7, le=365)
+    pilot_ingest_token_ttl_days: int = Field(default=90, ge=1, le=365)
+    pilot_max_ingest_records: int = Field(default=500, ge=1, le=5000)
+    pilot_max_payload_bytes: int = Field(default=65_536, ge=4096, le=65_536)
+    pilot_ingest_requests_per_minute: int = Field(default=60, ge=1, le=1000)
+    pilot_webhook_requests_per_minute: int = Field(default=120, ge=1, le=2000)
+    github_webhook_secrets: dict[str, SecretStr] = Field(default_factory=dict)
     log_level: str = "INFO"
 
     @field_validator("cors_allowed_origins", mode="before")
@@ -86,6 +98,34 @@ class Settings(BaseSettings):
             return [item.strip() for item in stripped.split(",") if item.strip()]
         return value
 
+    @field_validator("github_webhook_secrets", mode="before")
+    @classmethod
+    def parse_github_webhook_secrets(cls, value: object) -> object:
+        if value is None or value == "":
+            return {}
+        if isinstance(value, str):
+            try:
+                value = json.loads(value)
+            except json.JSONDecodeError as exc:
+                raise ValueError("GITHUB_WEBHOOK_SECRETS must be a JSON object") from exc
+        if not isinstance(value, dict):
+            raise ValueError("GITHUB_WEBHOOK_SECRETS must be a JSON object")
+        normalized: dict[str, str] = {}
+        for repository, secret in value.items():
+            if (
+                not isinstance(repository, str)
+                or len(repository) > 240
+                or repository.count("/") != 1
+                or not all(part and part not in {".", ".."} for part in repository.split("/"))
+                or not isinstance(secret, str)
+                or len(secret) < 16
+            ):
+                raise ValueError(
+                    "Each GitHub webhook secret requires an owner/repository and 16+ characters"
+                )
+            normalized[repository.lower()] = secret
+        return normalized
+
     @field_validator("openai_base_url")
     @classmethod
     def normalize_base_url(cls, value: str) -> str:
@@ -105,6 +145,25 @@ class Settings(BaseSettings):
             if network.prefixlen == 0:
                 raise ValueError("TRUSTED_PROXY_CIDRS cannot trust every address")
         if self.environment.lower() in {"production", "prod"}:
+            if self.pilot_dev_auth_enabled:
+                raise ValueError("PILOT_DEV_AUTH_ENABLED must be false in production")
+            if self.pilot_enabled:
+                oidc_values = (
+                    self.pilot_oidc_issuer,
+                    self.pilot_oidc_audience,
+                    self.pilot_oidc_jwks_url,
+                )
+                if any(not value for value in oidc_values):
+                    raise ValueError(
+                        "PILOT_OIDC_ISSUER, PILOT_OIDC_AUDIENCE, and PILOT_OIDC_JWKS_URL "
+                        "are required when the pilot is enabled"
+                    )
+                for value in (self.pilot_oidc_issuer, self.pilot_oidc_jwks_url):
+                    parsed_oidc = urlsplit(value or "")
+                    if parsed_oidc.scheme != "https" or not parsed_oidc.hostname:
+                        raise ValueError(
+                            "Pilot OIDC issuer and JWKS URL must use HTTPS in production"
+                        )
             if (
                 self.rate_limit_hmac_key.get_secret_value()
                 == "replace-this-local-development-value"

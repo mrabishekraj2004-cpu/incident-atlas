@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState } from 
 import { Link, NavLink, Outlet, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { dataClient, dataMode, isStaticDemo } from './dataClient'
 import { RegisterPage, SignInPage, useAccount, useTheme } from './account'
+import PilotPage from './PilotPage'
 import { ApiClientError } from './apiClient'
 import { canRunLiveInvestigation, evidenceLinkPath, reportPath as investigationPath } from './uiContracts'
 import type { ApprovalResponse, Confidence, DemoCapabilities, DependenciesResponse, EvidenceItemOut, IncidentCard, IncidentDetail as IncidentDetailType, InvestigationReport, LogEventOut, MetricPointOut, Source, SpanOut, TelemetryKind, TimelineEventOut } from './contracts'
@@ -38,6 +39,7 @@ function Shell() {
       <nav className="primary-nav" aria-label="Primary navigation">
         <NavLink to="/" end className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}><Icon name="grid" /> Overview</NavLink>
         <NavLink to="/incidents" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}><Icon name="alert" /> Incident library <span className="nav-count">03</span></NavLink>
+        {(import.meta.env.DEV || import.meta.env.VITE_PILOT_ENABLED === 'true') && <NavLink to="/pilot" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}><Icon name="activity" /> Team pilot</NavLink>}
         <NavLink to="/methodology" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}><Icon name="book" /> Methodology</NavLink>
       </nav>
       <div className="side-label account-nav-label">PREFERENCES</div>
@@ -508,7 +510,7 @@ function NotFound() { return <div className="page-wrap"><PageTitle eyebrow="404 
 
 function App() {
   const capabilities = useResource('demo-capabilities', signal => dataClient.getCapabilities(signal))
-  return <CapabilitiesContext.Provider value={capabilities}><Routes><Route path="/login" element={<SignInPage/>}/><Route path="/register" element={<RegisterPage/>}/><Route element={<Shell/>}><Route path="/" element={<Dashboard/>}/><Route path="/incidents" element={<IncidentLibrary/>}/><Route path="/incidents/:incidentId" element={<IncidentWorkspace/>}/><Route path="/investigations/:reportId" element={<InvestigationReportPage/>}/><Route path="/investigations/:reportId/mitigation" element={<MitigationReview/>}/><Route path="/methodology" element={<Methodology/>}/><Route path="/settings" element={<SettingsPage/>}/><Route path="/settings/:section" element={<SettingsPage/>}/><Route path="*" element={<NotFound/>}/></Route></Routes></CapabilitiesContext.Provider>
+  return <CapabilitiesContext.Provider value={capabilities}><Routes><Route path="/login" element={<SignInPage/>}/><Route path="/register" element={<RegisterPage/>}/><Route element={<Shell/>}><Route path="/" element={<Dashboard/>}/><Route path="/incidents" element={<IncidentLibrary/>}/><Route path="/incidents/:incidentId" element={<IncidentWorkspace/>}/><Route path="/investigations/:reportId" element={<InvestigationReportPage/>}/><Route path="/investigations/:reportId/mitigation" element={<MitigationReview/>}/><Route path="/pilot" element={<PilotPage/>}/><Route path="/pilot/callback" element={<PilotPage/>}/><Route path="/methodology" element={<Methodology/>}/><Route path="/settings" element={<SettingsPage/>}/><Route path="/settings/:section" element={<SettingsPage/>}/><Route path="*" element={<NotFound/>}/></Route></Routes></CapabilitiesContext.Provider>
 }
 
 function time(value: string) { return new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC', hourCycle: 'h23' }).format(new Date(value)) }

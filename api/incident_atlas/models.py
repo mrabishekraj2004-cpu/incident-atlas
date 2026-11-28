@@ -7,6 +7,7 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
+    ForeignKeyConstraint,
     Index,
     Integer,
     Numeric,
@@ -418,3 +419,319 @@ class EvaluationLabel(Base):
     expected_abstention: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     label_version: Mapped[str] = mapped_column(String(32), nullable=False)
     notes: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class PilotWorkspace(Base):
+    """Tenant root for authenticated pilot data; public demo rows remain separate."""
+
+    __tablename__ = "pilot_workspaces"
+
+    id: Mapped[str] = mapped_column(String(120), primary_key=True)
+    name: Mapped[str] = mapped_column(String(160), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class PilotMembership(Base):
+    __tablename__ = "pilot_memberships"
+
+    workspace_id: Mapped[str] = mapped_column(
+        ForeignKey("pilot_workspaces.id", ondelete="CASCADE"), primary_key=True
+    )
+    subject: Mapped[str] = mapped_column(String(240), primary_key=True)
+    role: Mapped[str] = mapped_column(String(16), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    __table_args__ = (
+        CheckConstraint("role IN ('owner','editor','viewer')", name="ck_pilot_membership_role"),
+    )
+
+
+class PilotService(Base):
+    __tablename__ = "pilot_services"
+
+    id: Mapped[str] = mapped_column(String(120), primary_key=True)
+    workspace_id: Mapped[str] = mapped_column(
+        ForeignKey("pilot_workspaces.id", ondelete="CASCADE"), nullable=False
+    )
+    service_name: Mapped[str] = mapped_column(String(160), nullable=False)
+    owner_team: Mapped[str] = mapped_column(String(120), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "service_name", name="uq_pilot_service_workspace_name"),
+        UniqueConstraint("workspace_id", "id", name="uq_pilot_service_workspace_id"),
+    )
+
+
+class PilotIncident(Base):
+    __tablename__ = "pilot_incidents"
+
+    id: Mapped[str] = mapped_column(String(120), primary_key=True)
+    workspace_id: Mapped[str] = mapped_column(
+        ForeignKey("pilot_workspaces.id", ondelete="CASCADE"), nullable=False
+    )
+    incident_key: Mapped[str] = mapped_column(String(160), nullable=False)
+    title: Mapped[str] = mapped_column(String(240), nullable=False)
+    severity: Mapped[str] = mapped_column(String(16), nullable=False)
+    summary: Mapped[str] = mapped_column(Text, nullable=False)
+    primary_service_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    status: Mapped[str] = mapped_column(String(24), default="open", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "incident_key", name="uq_pilot_incident_workspace_key"),
+        UniqueConstraint("workspace_id", "id", name="uq_pilot_incident_workspace_id"),
+        ForeignKeyConstraint(
+            ["workspace_id", "primary_service_id"],
+            ["pilot_services.workspace_id", "pilot_services.id"],
+            name="fk_pilot_incident_primary_service_workspace",
+            ondelete="RESTRICT",
+        ),
+        CheckConstraint(
+            "severity IN ('SEV-1','SEV-2','SEV-3','SEV-4')",
+            name="ck_pilot_incident_severity",
+        ),
+        CheckConstraint("status IN ('open','resolved')", name="ck_pilot_incident_status"),
+    )
+
+
+class PilotIntegration(Base):
+    __tablename__ = "pilot_integrations"
+
+    id: Mapped[str] = mapped_column(String(180), primary_key=True)
+    workspace_id: Mapped[str] = mapped_column(
+        ForeignKey("pilot_workspaces.id", ondelete="CASCADE"), nullable=False
+    )
+    provider: Mapped[str] = mapped_column(String(32), nullable=False)
+    external_id: Mapped[str] = mapped_column(String(240), nullable=False)
+    incident_key: Mapped[str] = mapped_column(String(160), nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("provider", "external_id", name="uq_pilot_integration_provider_repo"),
+        ForeignKeyConstraint(
+            ["workspace_id", "incident_key"],
+            ["pilot_incidents.workspace_id", "pilot_incidents.incident_key"],
+            name="fk_pilot_integration_incident_workspace",
+            ondelete="CASCADE",
+        ),
+        CheckConstraint("provider = 'github'", name="ck_pilot_integration_provider"),
+    )
+
+
+class PilotIngestToken(Base):
+    __tablename__ = "pilot_ingest_tokens"
+
+    id: Mapped[str] = mapped_column(String(180), primary_key=True)
+    workspace_id: Mapped[str] = mapped_column(
+        ForeignKey("pilot_workspaces.id", ondelete="CASCADE"), nullable=False
+    )
+    service_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["workspace_id", "service_id"],
+            ["pilot_services.workspace_id", "pilot_services.id"],
+            name="fk_pilot_ingest_token_service_workspace",
+            ondelete="CASCADE",
+        ),
+        Index("ix_pilot_ingest_token_workspace", "workspace_id", "revoked_at"),
+    )
+
+
+class PilotEvidence(Base):
+    __tablename__ = "pilot_evidence"
+
+    id: Mapped[str] = mapped_column(String(180), primary_key=True)
+    workspace_id: Mapped[str] = mapped_column(
+        ForeignKey("pilot_workspaces.id", ondelete="CASCADE"), nullable=False
+    )
+    incident_id: Mapped[str] = mapped_column(
+        ForeignKey("pilot_incidents.id", ondelete="CASCADE"), nullable=False
+    )
+    service_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    source: Mapped[str] = mapped_column(String(32), nullable=False)
+    source_record_id: Mapped[str] = mapped_column(String(240), nullable=False)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "workspace_id", "source", "source_record_id", name="uq_pilot_evidence_dedupe"
+        ),
+        ForeignKeyConstraint(
+            ["workspace_id", "incident_id"],
+            ["pilot_incidents.workspace_id", "pilot_incidents.id"],
+            name="fk_pilot_evidence_incident_workspace",
+            ondelete="CASCADE",
+        ),
+        CheckConstraint(
+            "kind IN ('metric','log','trace','deploy')", name="ck_pilot_evidence_kind"
+        ),
+        CheckConstraint(
+            "source IN ('otel','github','synthetic_fixture')", name="ck_pilot_evidence_source"
+        ),
+        Index(
+            "ix_pilot_evidence_workspace_incident_time",
+            "workspace_id",
+            "incident_id",
+            "occurred_at",
+        ),
+        Index("ix_pilot_evidence_expires", "expires_at"),
+    )
+
+
+class PilotIngestBatch(Base):
+    __tablename__ = "pilot_ingest_batches"
+
+    id: Mapped[str] = mapped_column(String(180), primary_key=True)
+    workspace_id: Mapped[str] = mapped_column(
+        ForeignKey("pilot_workspaces.id", ondelete="CASCADE"), nullable=False
+    )
+    incident_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    signal: Mapped[str] = mapped_column(String(16), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(160), nullable=False)
+    payload_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    accepted_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    duplicate_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    rejected_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "workspace_id",
+            "incident_id",
+            "signal",
+            "idempotency_key",
+            name="uq_pilot_ingest_idempotency",
+        ),
+        ForeignKeyConstraint(
+            ["workspace_id", "incident_id"],
+            ["pilot_incidents.workspace_id", "pilot_incidents.id"],
+            name="fk_pilot_ingest_batch_incident_workspace",
+            ondelete="CASCADE",
+        ),
+        Index("ix_pilot_ingest_batch_created", "created_at"),
+    )
+
+
+class PilotSnapshot(Base):
+    __tablename__ = "pilot_snapshots"
+
+    id: Mapped[str] = mapped_column(String(180), primary_key=True)
+    workspace_id: Mapped[str] = mapped_column(
+        ForeignKey("pilot_workspaces.id", ondelete="CASCADE"), nullable=False
+    )
+    incident_id: Mapped[str] = mapped_column(
+        ForeignKey("pilot_incidents.id", ondelete="CASCADE"), nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    item_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "id", name="uq_pilot_snapshot_workspace_id"),
+        ForeignKeyConstraint(
+            ["workspace_id", "incident_id"],
+            ["pilot_incidents.workspace_id", "pilot_incidents.id"],
+            name="fk_pilot_snapshot_incident_workspace",
+            ondelete="CASCADE",
+        ),
+        Index("ix_pilot_snapshot_expires", "expires_at"),
+    )
+
+
+class PilotSnapshotEvidence(Base):
+    __tablename__ = "pilot_snapshot_evidence"
+
+    snapshot_id: Mapped[str] = mapped_column(
+        ForeignKey("pilot_snapshots.id", ondelete="CASCADE"), primary_key=True
+    )
+    evidence_id: Mapped[str] = mapped_column(String(180), primary_key=True)
+    workspace_id: Mapped[str] = mapped_column(
+        ForeignKey("pilot_workspaces.id", ondelete="CASCADE"), nullable=False
+    )
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    source: Mapped[str] = mapped_column(String(32), nullable=False)
+    service_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["workspace_id", "snapshot_id"],
+            ["pilot_snapshots.workspace_id", "pilot_snapshots.id"],
+            name="fk_pilot_snapshot_evidence_workspace",
+            ondelete="CASCADE",
+        ),
+        Index("ix_pilot_snapshot_evidence_workspace_lookup", "workspace_id", "evidence_id"),
+    )
+
+
+class PilotReport(Base):
+    __tablename__ = "pilot_reports"
+
+    id: Mapped[str] = mapped_column(String(180), primary_key=True)
+    workspace_id: Mapped[str] = mapped_column(
+        ForeignKey("pilot_workspaces.id", ondelete="CASCADE"), nullable=False
+    )
+    incident_id: Mapped[str] = mapped_column(
+        ForeignKey("pilot_incidents.id", ondelete="CASCADE"), nullable=False
+    )
+    snapshot_id: Mapped[str] = mapped_column(
+        ForeignKey("pilot_snapshots.id", ondelete="RESTRICT"), nullable=False
+    )
+    source: Mapped[str] = mapped_column(String(32), nullable=False)
+    report_payload: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "id", name="uq_pilot_report_workspace_id"),
+        ForeignKeyConstraint(
+            ["workspace_id", "incident_id"],
+            ["pilot_incidents.workspace_id", "pilot_incidents.id"],
+            name="fk_pilot_report_incident_workspace",
+            ondelete="CASCADE",
+        ),
+        ForeignKeyConstraint(
+            ["workspace_id", "snapshot_id"],
+            ["pilot_snapshots.workspace_id", "pilot_snapshots.id"],
+            name="fk_pilot_report_snapshot_workspace",
+            ondelete="RESTRICT",
+        ),
+        CheckConstraint(
+            "source IN ('rules_fresh_analysis','stored_report')", name="ck_pilot_report_source"
+        ),
+        Index("ix_pilot_report_workspace_incident", "workspace_id", "incident_id", "created_at"),
+        Index("ix_pilot_report_expires", "expires_at"),
+    )
+
+
+class PilotAuditEvent(Base):
+    __tablename__ = "pilot_audit_events"
+
+    id: Mapped[str] = mapped_column(String(180), primary_key=True)
+    workspace_id: Mapped[str] = mapped_column(
+        ForeignKey("pilot_workspaces.id", ondelete="CASCADE"), nullable=False
+    )
+    subject: Mapped[str] = mapped_column(String(240), nullable=False)
+    action: Mapped[str] = mapped_column(String(80), nullable=False)
+    entity_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    entity_id: Mapped[str] = mapped_column(String(180), nullable=False)
+    request_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    attributes: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, nullable=False)
+
+    __table_args__ = (Index("ix_pilot_audit_workspace_time", "workspace_id", "occurred_at"),)

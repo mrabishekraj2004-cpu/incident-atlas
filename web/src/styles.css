@@ -743,3 +743,92 @@ html[data-density="compact"] .settings-content { min-height: 420px; }
 [data-theme="dark"] .dialog-mitigation { color: #b9c4d1; }
 [data-theme="dark"] .report-banner h1, [data-theme="dark"] .report-aside h3 { color: #e4ebf4; }
 [data-theme="dark"] .report-banner-copy p, [data-theme="dark"] .report-footnote, [data-theme="dark"] .catalog-footer { color: #a8b3c1; }
+
+/* Styles for the optional authenticated workspace pilot. */
+.pilot-page { max-width: 1420px; }
+.pilot-title-actions { display:flex; align-items:center; gap:10px; }
+.pilot-role,.pilot-chip { display:inline-flex; align-items:center; min-height:24px; padding:4px 9px; border:1px solid var(--line); border-radius:999px; background:var(--paper); color:var(--muted); font:9px var(--mono); letter-spacing:.35px; text-transform:uppercase; }
+.pilot-role { color:var(--teal-dark); border-color:var(--line-dark); }
+.pilot-auth-card,.pilot-incident-card,.pilot-panel { border:1px solid var(--line); border-radius:14px; background:var(--paper); box-shadow:0 8px 24px rgb(20 40 50 / 4%); }
+.pilot-auth-card { display:flex; justify-content:space-between; align-items:center; gap:32px; padding:clamp(22px,4vw,42px); }
+.pilot-auth-card h2,.pilot-panel h2,.pilot-incident-card h2 { margin:9px 0; color:var(--ink); font-size:21px; }
+.pilot-auth-card p,.pilot-panel>p,.pilot-incident-card p { max-width:680px; margin:0; color:var(--muted); line-height:1.65; }
+.pilot-dev-login { display:flex; align-items:end; flex-wrap:wrap; gap:10px; max-width:540px; }
+.pilot-dev-login label,.pilot-toolbar label { display:grid; gap:7px; color:var(--muted); font-size:11px; font-weight:700; }
+.pilot-dev-login select,.pilot-toolbar select,.pilot-member-row select,.pilot-add-member select,.pilot-add-member input { min-height:38px; padding:8px 10px; border:1px solid var(--line-dark); border-radius:8px; background:var(--paper); color:var(--ink); }
+.pilot-dev-login small { width:100%; color:var(--muted); font-size:10px; }
+.pilot-auth-error { color:var(--red); font-size:13px; }
+.pilot-alert { display:grid; grid-template-columns:max-content 1fr max-content; align-items:center; gap:12px; margin:0 0 14px; padding:12px 14px; border:1px solid var(--line); border-radius:10px; font-size:12px; }
+.pilot-alert button,.pilot-close { border:0; background:transparent; color:var(--muted); cursor:pointer; font-size:18px; }
+.pilot-alert-error { border-color:#e7c7c2; background:var(--red-pale); color:var(--red); }
+.pilot-alert-success { border-color:#cde3d7; background:var(--green-pale); color:var(--green); }
+.pilot-loading { color:var(--muted); font-size:12px; }
+.pilot-toolbar { display:flex; align-items:end; gap:12px; margin:12px 0 16px; }
+.pilot-toolbar label:first-child { min-width:230px; }
+.pilot-toolbar label:nth-child(2) { min-width:300px; flex:1; }
+.pilot-incident-card { padding:20px 22px 16px; }
+.pilot-incident-head { display:flex; align-items:start; justify-content:space-between; gap:20px; }
+.pilot-chip-row,.pilot-report-labels { display:flex; flex-wrap:wrap; gap:7px; }
+.pilot-chip-severity { border-color:#f0dbc4; background:var(--amber-pale); color:var(--amber); }
+.pilot-incident-card h2 { margin-top:12px; font-size:20px; }
+.pilot-coverage { display:grid; gap:7px; margin-top:16px; padding-top:14px; border-top:1px solid var(--line); color:var(--muted); font-size:11px; }
+.pilot-coverage>strong { color:var(--ink-soft); }
+.pilot-coverage>span { display:flex; gap:8px; flex-wrap:wrap; }
+.pilot-coverage-item { padding:5px 8px; border:1px solid var(--line); border-radius:7px; background:var(--canvas); text-transform:uppercase; font:9px var(--mono); }
+.pilot-coverage-item b { margin-left:4px; color:var(--ink); }
+.pilot-coverage p { margin-top:2px; }
+.pilot-admin-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:14px 0; }
+.pilot-panel { min-width:0; padding:18px; }
+.pilot-panel-heading { display:flex; justify-content:space-between; align-items:start; gap:12px; margin-bottom:14px; }
+.pilot-panel-heading h2 { margin:5px 0 0; font-size:17px; }
+.pilot-panel-heading>span,.pilot-owner-team { color:var(--muted); font-size:11px; }
+.pilot-member-list { display:grid; }
+.pilot-member-row { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 0; border-top:1px solid var(--line); }
+.pilot-member-row code { overflow:hidden; color:var(--ink-soft); font:10px var(--mono); text-overflow:ellipsis; }
+.pilot-member-row select { min-height:32px; padding:5px 8px; font-size:11px; }
+.pilot-remove-member { min-height:30px; padding:5px 8px; font-size:10px; }
+.pilot-audit-list { display:grid; }
+.pilot-audit-row { display:flex; justify-content:space-between; gap:10px; padding:9px 0; border-top:1px solid var(--line); }
+.pilot-audit-row div { display:grid; gap:4px; min-width:0; }
+.pilot-audit-row strong { color:var(--ink-soft); font-size:11px; text-transform:capitalize; }
+.pilot-audit-row small,.pilot-audit-row time { color:var(--muted); font-size:9px; overflow-wrap:anywhere; }
+.pilot-add-member { display:flex; gap:8px; margin-top:12px; }
+.pilot-add-member input { min-width:0; flex:1; }
+.pilot-content-grid { display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr); align-items:start; gap:14px; margin-top:14px; }
+.pilot-content-grid>.pilot-panel { min-height:245px; }
+.pilot-empty { padding:28px 4px; color:var(--muted); }
+.pilot-empty strong { color:var(--ink-soft); font-size:13px; }
+.pilot-empty p { max-width:470px; margin:8px 0 0; font-size:12px; line-height:1.6; }
+.pilot-timeline { display:grid; }
+.pilot-event { padding:13px 0; border-top:1px solid var(--line); }
+.pilot-event-top { display:flex; flex-wrap:wrap; align-items:center; gap:8px; color:var(--muted); font-size:10px; }
+.pilot-event h3 { margin:9px 0 4px; color:var(--ink); font-size:13px; }
+.pilot-event p { margin:0 0 7px; color:var(--muted); font-size:11px; line-height:1.55; }
+.pilot-chip-synthetic { border-color:#ecd9bd; color:var(--amber); background:var(--amber-pale); }
+.pilot-citation { display:block; max-width:100%; margin:4px 0 0; padding:0; border:0; background:transparent; color:var(--teal-dark); font:10px var(--mono); overflow-wrap:anywhere; text-align:left; cursor:pointer; }
+.pilot-citation:hover { text-decoration:underline; }
+.pilot-report-list { display:grid; gap:6px; margin-bottom:12px; }
+.pilot-report-row { display:flex; flex-direction:column; align-items:start; gap:4px; padding:9px 10px; border:1px solid var(--line); border-radius:8px; background:var(--canvas); color:var(--ink-soft); text-align:left; cursor:pointer; }
+.pilot-report-row.active { border-color:var(--teal); }
+.pilot-report-row span { font-size:11px; font-weight:700; }
+.pilot-report-row small { color:var(--muted); font:9px var(--mono); }
+.pilot-report-detail { margin-top:14px; padding-top:14px; border-top:1px solid var(--line); }
+.pilot-report-detail h3 { margin:14px 0 7px; color:var(--ink); font-size:15px; }
+.pilot-report-uncertainty,.pilot-gaps { padding:10px; border-radius:8px; background:var(--blue-pale); color:var(--ink-soft); font-size:11px; line-height:1.6; }
+.pilot-gaps { background:var(--amber-pale); color:var(--amber); }
+.pilot-hypothesis { margin-top:14px; padding:14px; border:1px solid var(--line); border-radius:10px; }
+.pilot-hypothesis-head { display:flex; justify-content:space-between; align-items:center; gap:10px; color:var(--ink-soft); font-size:11px; }
+.pilot-hypothesis>p { color:var(--ink-soft); font-size:12px; line-height:1.6; }
+.pilot-confidence-note { color:var(--muted)!important; }
+.pilot-citations { display:grid; gap:5px; margin-top:12px; font-size:11px; }
+.pilot-next-check { margin-top:12px; }
+.pilot-sim-note { padding:9px; border:1px solid #ead9bf; border-radius:7px; background:var(--amber-pale); color:var(--amber); font-size:10px; line-height:1.55; }
+.pilot-snapshot-stamp { display:grid; gap:6px; margin-top:14px; color:var(--muted); font-size:9px; }
+.pilot-snapshot-stamp code { color:var(--ink-soft); font-family:var(--mono); overflow-wrap:anywhere; }
+.pilot-evidence-detail { margin-top:15px; padding-top:13px; border-top:1px solid var(--line); }
+.pilot-evidence-detail h3 { margin:5px 0; color:var(--ink); font-size:13px; }
+.pilot-evidence-detail p,.pilot-evidence-detail small { color:var(--muted); font-size:10px; line-height:1.5; }
+.pilot-evidence-detail pre { max-height:260px; overflow:auto; padding:12px; border-radius:8px; background:var(--canvas); color:var(--ink-soft); font:10px/1.5 var(--mono); white-space:pre-wrap; overflow-wrap:anywhere; }
+.pilot-data-note { display:flex; justify-content:space-between; gap:12px; margin:15px 0 4px; color:var(--muted); font-size:10px; }
+@media (max-width:1080px) { .pilot-admin-grid,.pilot-content-grid { grid-template-columns:1fr; } }
+@media (max-width:720px) { .pilot-auth-card,.pilot-incident-head { align-items:stretch; flex-direction:column; } .pilot-toolbar,.pilot-data-note { align-items:stretch; flex-direction:column; } .pilot-toolbar label:first-child,.pilot-toolbar label:nth-child(2) { min-width:0; width:100%; } .pilot-title-actions { width:100%; justify-content:flex-start; } .pilot-add-member { flex-wrap:wrap; } .pilot-add-member input { width:100%; flex-basis:100%; } }

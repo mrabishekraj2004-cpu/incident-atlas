@@ -52,6 +52,18 @@ def clean_postgres(migrated_postgres):
     from incident_atlas.db import engine
 
     tables = [
+        "public.pilot_audit_events",
+        "public.pilot_snapshot_evidence",
+        "public.pilot_reports",
+        "public.pilot_snapshots",
+        "public.pilot_ingest_batches",
+        "public.pilot_evidence",
+        "public.pilot_integrations",
+        "public.pilot_ingest_tokens",
+        "public.pilot_incidents",
+        "public.pilot_services",
+        "public.pilot_memberships",
+        "public.pilot_workspaces",
         "evaluation.labels",
         "public.simulation_approvals",
         "public.audit_events",
@@ -97,6 +109,8 @@ def pg_client(clean_postgres):
             openai_api_key=None,
             live_analysis_enabled=False,
             rate_limit_enabled=False,
+            pilot_enabled=True,
+            pilot_dev_auth_enabled=True,
         )
 
     app.dependency_overrides[get_db] = get_test_db

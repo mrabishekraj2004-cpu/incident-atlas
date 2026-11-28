@@ -6,6 +6,7 @@
       "incident_id": "eval-fraud-consumer-lag-001",
       "incident_start": "2025-04-01T12:00:00Z",
       "data_kind": "authored_synthetic_independent",
+      "author": "Incident Atlas project team; individual author not recorded",
       "expected_primary_label": "fraud_consumer_lag",
       "expected_supporting_evidence_ids": [
         "ev-independent-queue-lag-before",
@@ -22,6 +23,7 @@
       "incident_id": "eval-checkout-cpu-throttling-002",
       "incident_start": "2025-04-02T09:30:00Z",
       "data_kind": "authored_synthetic_independent",
+      "author": "Incident Atlas project team; individual author not recorded",
       "expected_primary_label": "checkout_cpu_throttling",
       "expected_supporting_evidence_ids": [
         "ev-independent-cpu-throttle-before",
@@ -37,10 +39,23 @@
       "incident_id": "eval-shipping-span-ambiguous-003",
       "incident_start": "2025-04-03T16:15:00Z",
       "data_kind": "authored_synthetic_independent",
+      "author": "Incident Atlas project team; individual author not recorded",
       "expected_primary_label": null,
       "expected_supporting_evidence_ids": [],
       "expected_abstention": true,
       "notes": "Independent ambiguity case: one slow shipping span is visible, but no baseline or corroborating impact signal supports a cause."
+    },
+    {
+      "case_id": "case-independent-checkout-missing-deploy-004",
+      "incident_id": "eval-checkout-missing-deploy-004",
+      "incident_start": "2025-04-04T13:00:00Z",
+      "data_kind": "authored_synthetic_missing_signal",
+      "author": "Incident Atlas project team; individual author not recorded",
+      "expected_primary_label": null,
+      "expected_supporting_evidence_ids": [],
+      "expected_abstention": true,
+      "evidence_gaps": ["deployment event", "trace spans", "logs"],
+      "notes": "Checkout latency rises while CPU throttling remains flat. The deployment marker, traces, and logs are missing, so the correct behavior is to abstain."
     }
   ],
   "evidence_by_case": {
@@ -59,6 +74,12 @@
     ],
     "case-independent-shipping-span-ambiguous-v1": [
       {"evidence_id":"ev-independent-shipping-slow-span","kind":"span","observed_at":"2025-04-03T16:20:00Z","payload":{"operation":"shipping.quote","service_name":"shipping","duration_ms":4200,"status":"OK","attributes":{"peer.service":"currency"}}}
+    ],
+    "case-independent-checkout-missing-deploy-004": [
+      {"evidence_id":"ev-independent-missing-checkout-latency-before","kind":"metric","observed_at":"2025-04-04T12:55:00Z","payload":{"metric_name":"checkout.http.server.duration.p95","value":110,"labels":{}}},
+      {"evidence_id":"ev-independent-missing-checkout-latency-rise","kind":"metric","observed_at":"2025-04-04T13:05:00Z","payload":{"metric_name":"checkout.http.server.duration.p95","value":890,"labels":{}}},
+      {"evidence_id":"ev-independent-missing-checkout-cpu-before","kind":"metric","observed_at":"2025-04-04T12:55:00Z","payload":{"metric_name":"checkout.container.cpu.throttled_ratio","value":0.02,"labels":{}}},
+      {"evidence_id":"ev-independent-missing-checkout-cpu-flat","kind":"metric","observed_at":"2025-04-04T13:05:00Z","payload":{"metric_name":"checkout.container.cpu.throttled_ratio","value":0.03,"labels":{}}}
     ]
   }
 }
